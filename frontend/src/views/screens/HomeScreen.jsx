@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { categoriesAPI, coffretsAPI, notificationsAPI, reviewsAPI } from '../../utils/api';
 import { subscribeToPush } from '../../utils/push';
 import ReviewPhotoCarousel from '../../components/ReviewPhotoCarousel';
+import { errorText } from '../../utils/errors';
 
 const FALLBACK_TESTIMONIALS = [
   { id: 'f1', user_name: 'Aminata K.', rating: 5, comment: 'Des bijoux de qualité et un service incroyable ! Je ne les quitte plus.', images: [] },
@@ -38,7 +39,7 @@ export default function HomeScreen() {
       await subscribeToPush();
       setSubState('done');
     } catch (err) {
-      setSubError(err.message || "Erreur lors de l'abonnement.");
+      setSubError(err.response ? errorText(err, 'L’abonnement aux notifications a échoué.') : (err.message || 'L’abonnement aux notifications a échoué.'));
       setSubState('error');
     }
   };

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { cartAPI } from '../utils/api';
+import { errorText } from '../utils/errors';
 
 const CART_ID_KEY = 'ma_cart_id';
 
@@ -15,14 +16,15 @@ function getCartId() {
 const useCartStore = create((set, get) => ({
   cart: null,
   loading: false,
+  error: '',
 
   fetchCart: async () => {
-    set({ loading: true });
+    set({ loading: true, error: '' });
     try {
       const { data } = await cartAPI.get(getCartId());
       set({ cart: data, loading: false });
-    } catch {
-      set({ loading: false });
+    } catch (err) {
+      set({ loading: false, error: errorText(err, 'Votre panier n’a pas pu être chargé.') });
     }
   },
 

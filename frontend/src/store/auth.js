@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import Cookies from 'js-cookie';
 import { jwtDecode } from 'jwt-decode';
 import { authAPI } from '../utils/api';
+import { errorText } from '../utils/errors';
 
 const useAuthStore = create((set, get) => ({
   user: null,
@@ -37,7 +38,8 @@ const useAuthStore = create((set, get) => ({
       return { success: true };
     } catch (err) {
       set({ loading: false });
-      const msg = err.response?.data?.detail || 'Email ou mot de passe incorrect.';
+      const status = err.response?.status;
+      const msg = status === 400 || status === 401 ? 'Email ou mot de passe incorrect.' : errorText(err);
       return { success: false, error: msg };
     }
   },
@@ -51,7 +53,8 @@ const useAuthStore = create((set, get) => ({
       return { success: true };
     } catch (err) {
       set({ loading: false });
-      return { success: false, error: err.response?.data || { detail: 'Erreur lors de l\'inscription.' } };
+      const data = err.response?.data;
+      return { success: false, error: err.response?.status === 400 && data && typeof data === 'object' ? data : { detail: errorText(err, 'Le compte n’a pas pu être créé. Réessayez.') } };
     }
   },
 

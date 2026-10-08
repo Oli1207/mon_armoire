@@ -21,7 +21,7 @@ export default function RegisterScreen() {
       setDone(true);
       setTimeout(() => navigate('/login'), 1500);
     } else {
-      setErrors(res.error);
+      setErrors(Object.fromEntries(Object.entries(res.error).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v])));
     }
   };
 
@@ -50,9 +50,11 @@ export default function RegisterScreen() {
         )}
         <div className="card p-4 shadow-sm">
           <form onSubmit={handleSubmit}>
+            {(errors.detail || errors.non_field_errors) && <div className="alert alert-danger" role="alert">{errors.detail || errors.non_field_errors}</div>}
             <div className="mb-3">
               <label className="form-label small text-uppercase tracking-wide">Nom complet</label>
               <input autoComplete="name" name="full_name" className="form-control" value={form.full_name} onChange={handleChange} />
+              {errors.full_name && <div className="text-danger small">{errors.full_name}</div>}
             </div>
             <div className="mb-3">
               <label className="form-label small text-uppercase tracking-wide">Email</label>
@@ -62,6 +64,7 @@ export default function RegisterScreen() {
             <div className="mb-3">
               <label className="form-label small text-uppercase tracking-wide">Téléphone</label>
               <input type="tel" autoComplete="tel" inputMode="tel" name="phone" className="form-control" value={form.phone} onChange={handleChange} />
+              {errors.phone && <div className="text-danger small">{errors.phone}</div>}
             </div>
             <div className="mb-3">
               <label className="form-label small text-uppercase tracking-wide">Mot de passe</label>
@@ -71,6 +74,8 @@ export default function RegisterScreen() {
             <div className="mb-3">
               <label className="form-label small text-uppercase tracking-wide">Confirmer le mot de passe</label>
               <input autoComplete="new-password" type="password" name="password2" className="form-control" value={form.password2} onChange={handleChange} required />
+              {errors.password2 && <div className="text-danger small">{errors.password2}</div>}
+              {errors.referral_code && <div className="text-danger small">{errors.referral_code}</div>}
             </div>
             <button type="submit" className="btn btn-primary w-100 py-2 text-uppercase small tracking-wide" disabled={loading}>
               {loading ? 'Création...' : 'Créer mon compte'}

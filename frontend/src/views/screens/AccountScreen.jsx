@@ -5,6 +5,7 @@ import useAuthStore from '../../store/auth';
 import { favoritesAPI, ordersAPI, loyaltyAPI, authAPI } from '../../utils/api';
 import { useLoadMore } from '../../utils/usePaginated';
 import ListStatus from '../../components/ListStatus';
+import { errorText } from '../../utils/errors';
 
 const STATUS_LABELS = {
   pending: 'En attente', paid: 'Payée', processing: 'En préparation',
@@ -66,7 +67,7 @@ export default function AccountScreen() {
       setPasswordSaved(true);
       setTimeout(() => { setPasswordSaved(false); setShowPasswordForm(false); }, 2000);
     } catch (err) {
-      setPasswordError(err.response?.data?.old_password?.[0] || err.response?.data?.detail || 'Erreur lors du changement de mot de passe.');
+      setPasswordError(err.response?.data?.old_password?.[0] || errorText(err, 'Le mot de passe n’a pas pu être changé.'));
     } finally {
       setSavingPassword(false);
     }

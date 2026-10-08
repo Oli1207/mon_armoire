@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { coffretsAPI, productsAPI } from '../../utils/api';
 import useCartStore from '../../store/cart';
 import { useDebounced } from '../../utils/usePaginated';
+import { errorText } from '../../utils/errors';
+import Suggestions from '../../components/Suggestions';
 
 export default function CoffretConfiguratorScreen() {
   const { slug } = useParams();
@@ -102,7 +104,7 @@ export default function CoffretConfiguratorScreen() {
       await addCoffretConfiguration(configuration.id);
       navigate('/panier');
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de la configuration du coffret.');
+      setError(errorText(err, 'Le coffret n’a pas pu être enregistré. Vérifiez vos choix puis réessayez.'));
     } finally {
       setSubmitting(false);
     }
@@ -291,6 +293,10 @@ export default function CoffretConfiguratorScreen() {
           {renderCta()}
         </div>
       )}
+
+      <div className="mt-5 pt-4 border-top">
+        <Suggestions title="À offrir avec votre coffret" lead="Quelques bijoux de la boutique qui se marient bien avec un cadeau." />
+      </div>
     </div>
   );
 }

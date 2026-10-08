@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { authAPI } from '../../utils/api';
+import { errorText } from '../../utils/errors';
 
 export default function ResetPasswordScreen() {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ export default function ResetPasswordScreen() {
       setDone(true);
       setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
-      setError(err.response?.data?.error || 'Ce lien est invalide ou a expiré.');
+      setError(errorText(err, 'Ce lien est invalide ou a expiré. Demandez-en un nouveau.'));
     } finally {
       setLoading(false);
     }

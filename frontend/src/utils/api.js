@@ -40,6 +40,7 @@ export const productsAPI = {
   list:    (params = {}) => axiosInstance.get('/api/products/', { params }),
   detail:  (slug)         => axiosInstance.get(`/api/products/${slug}/`),
   suggest: (q)            => axiosInstance.get('/api/search/suggest/', { params: { q } }),
+  suggestions: (like, signal) => axiosInstance.get('/api/products/suggestions/', { params: like ? { like } : {}, signal }),
 };
 
 // ── Cartes cadeaux ─────────────────────────────────────────────────────────────

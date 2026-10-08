@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { giftcardsAPI } from '../../utils/api';
 import useAuthStore from '../../store/auth';
+import { errorText } from '../../utils/errors';
 
 const AMOUNTS = [10000, 25000, 50000];
 
@@ -35,7 +36,7 @@ export default function GiftCardsScreen() {
       });
       navigate(`/commandes/${order.order_number}`, { state: { order } });
     } catch (err) {
-      setError(err.response?.data?.error || "Erreur lors de l'achat de la carte cadeau.");
+      setError(errorText(err, 'La carte cadeau n’a pas pu être créée. Vérifiez les informations saisies.'));
     } finally {
       setSubmitting(false);
     }

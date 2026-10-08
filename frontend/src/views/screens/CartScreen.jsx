@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import useCartStore from '../../store/cart';
+import ListStatus from '../../components/ListStatus';
+import Suggestions from '../../components/Suggestions';
+import { errorText } from '../../utils/errors';
 
 export default function CartScreen() {
-  const { cart, fetchCart, updateItem, removeItem } = useCartStore();
+  const { cart, loading, error: loadError, fetchCart, updateItem, removeItem } = useCartStore();
   const [error, setError] = useState('');
 
   const change = async (action) => {
@@ -11,7 +14,7 @@ export default function CartScreen() {
     try {
       await action();
     } catch (err) {
-      setError(err.response?.data?.error || 'Une erreur est survenue. Veuillez réessayer.');
+      setError(errorText(err));
       fetchCart();
     }
   };
@@ -20,6 +23,9 @@ export default function CartScreen() {
     fetchCart();
   }, []);
 
+  const items = cart?.items || [];
+  const suggestionKey = [...new Set(items.map((i) => i.product_slug).filter(Boolean))].sort();
+
   return (
     <div>
       <div className="py-5 text-center" style={{ backgroundColor: 'var(--ma-cream)' }}>
@@ -27,27 +33,23 @@ export default function CartScreen() {
         <h1 className="h1 mb-0">Mon panier</h1>
       </div>
 
-      <div className="container py-5" style={{ maxWidth: 800 }}>
+      <div className="container py-5" style={{ maxWidth: '50rem' }}>
         {!cart ? (
-          <p className="text-center text-muted">Chargement...</p>
-        ) : cart.items.length === 0 ? (
+          <ListStatus loading={loading || !loadError} error={loadError} onRetry={fetchCart} isEmpty rows={3} />
+        ) : items.length === 0 ? (
           <p className="text-center text-muted">
             Votre panier est vide. <Link to="/catalogue" className="link-tap text-gold">Voir les bijoux</Link>
           </p>
         ) : (
           <>
             {error && <div className="alert alert-danger" role="alert">{error}</div>}
-            {cart.items.map((item) => (
+            {items.map((item) => (
               <div className="d-flex justify-content-between align-items-center border-bottom py-3 flex-wrap gap-3" key={item.id}>
                 <div className="d-flex align-items-center gap-3">
                   {item.product_image ? (
-                    <img
-                      src={item.product_image}
-                      alt=""
-                      style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }}
-                    />
+                    <img src={item.product_image} alt="" className="cart-thumb" loading="lazy" />
                   ) : (
-                    <div className="bg-white" style={{ width: 64, height: 64, borderRadius: 4, flexShrink: 0 }} />
+                    <div className="cart-thumb bg-white" />
                   )}
                   <div>
                     <strong>
@@ -69,8 +71,9 @@ export default function CartScreen() {
                     {item.variant && (
                       <input
                         className="form-control form-control-sm mt-1"
-                        style={{ maxWidth: 260 }}
+                        style={{ maxWidth: '16rem' }}
                         placeholder="Texte de gravure (facultatif)"
+                        aria-label="Texte de gravure"
                         maxLength={60}
                         defaultValue={item.engraving_text}
                         onBlur={(e) => {
@@ -90,7 +93,7 @@ export default function CartScreen() {
                     inputMode="numeric"
                     aria-label="Quantité"
                     className="form-control form-control-sm"
-                    style={{ width: 70 }}
+                    style={{ width: '4.5rem' }}
                     value={item.quantity}
                     onChange={(e) => {
                       const quantity = Number(e.target.value);
@@ -114,6 +117,16 @@ export default function CartScreen() {
           </>
         )}
       </div>
+
+      {cart && (
+        <div className="container pb-5" style={{ maxWidth: '64rem' }}>
+          <Suggestions
+            like={suggestionKey}
+            title={items.length ? 'Complétez votre commande' : 'Nos bijoux du moment'}
+            lead={items.length ? 'D’autres pièces qui s’accordent avec votre sélection.' : undefined}
+          />
+        </div>
+      )}
     </div>
   );
 }

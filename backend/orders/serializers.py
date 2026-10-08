@@ -23,17 +23,21 @@ class CartItemSerializer(serializers.ModelSerializer):
     variant               = ProductVariantSerializer(read_only=True)
     coffret_configuration = CoffretConfigurationSummarySerializer(read_only=True)
     product_name          = serializers.SerializerMethodField()
+    product_slug          = serializers.SerializerMethodField()
     product_image          = serializers.SerializerMethodField()
     unit_price             = serializers.ReadOnlyField()
     subtotal               = serializers.ReadOnlyField()
 
     class Meta:
         model  = CartItem
-        fields = ('id', 'variant', 'coffret_configuration', 'product_name', 'product_image', 'quantity',
+        fields = ('id', 'variant', 'coffret_configuration', 'product_name', 'product_slug', 'product_image', 'quantity',
                   'gift_wrap', 'gift_message', 'engraving_text', 'unit_price', 'subtotal', 'added_at')
 
     def get_product_name(self, obj):
         return obj.variant.product.name if obj.variant else None
+
+    def get_product_slug(self, obj):
+        return obj.variant.product.slug if obj.variant else None
 
     def get_product_image(self, obj):
         return _item_image(obj)

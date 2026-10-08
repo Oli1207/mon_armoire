@@ -11,26 +11,7 @@ export const fcfa = (value) => `${Number(value || 0).toLocaleString('fr-FR')} FC
 
 export const shortDate = (value) => new Date(value).toLocaleDateString('fr-FR');
 
-/** Message lisible pour une erreur d'API (message du serveur si disponible, sinon texte simple). */
-export function errorText(err, fallback = 'Une erreur est survenue. Veuillez réessayer.') {
-  if (!err?.response) return 'Connexion impossible. Vérifiez votre réseau puis réessayez.';
-  const data = err.response.data;
-  if (!data || typeof data === 'string') return fallback;
-  if (data.error) return data.error;
-  if (data.detail) return data.detail;
-  const first = Object.values(data)[0];
-  const message = Array.isArray(first) ? first[0] : first;
-  return typeof message === 'string' ? message : fallback;
-}
-
-/** Erreurs par champ d'un formulaire : { nom: 'message' } (réponse 400 de l'API). */
-export function fieldErrors(err) {
-  const data = err?.response?.data;
-  if (!data || typeof data !== 'object') return {};
-  return Object.fromEntries(
-    Object.entries(data).map(([key, value]) => [key, Array.isArray(value) ? String(value[0]) : String(value)]),
-  );
-}
+export { errorText, fieldErrors } from '../../../utils/errors';
 
 export function PageHeader({ kicker = 'Administration', title, lead, children }) {
   return (

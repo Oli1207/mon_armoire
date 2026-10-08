@@ -817,3 +817,8 @@ footer.site-footer ul a {
 }
 .file-drop:hover, .file-drop:focus-within { border-color: var(--ma-brown); color: var(--ma-brown); }
 .file-drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+
+/* Panier : vignette d'article et section de suggestions */
+.cart-thumb { width: 4rem; height: 4rem; object-fit: cover; border-radius: var(--bs-border-radius-sm); flex-shrink: 0; border: 2px solid #333; }
+.suggestions { min-height: 8rem; }
+.suggestions .card-body { padding: 0.75rem; }

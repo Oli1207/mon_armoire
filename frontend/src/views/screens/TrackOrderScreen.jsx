@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ordersAPI } from '../../utils/api';
+import { errorText } from '../../utils/errors';
 
 const STATUS_LABELS = {
   pending: 'En attente de paiement',
@@ -26,7 +27,7 @@ export default function TrackOrderScreen() {
       const { data } = await ordersAPI.track(orderNumber.trim(), email.trim());
       setOrder(data);
     } catch (err) {
-      setError(err.response?.data?.error || 'Commande introuvable.');
+      setError(errorText(err, 'Commande introuvable. Vérifiez le numéro et l’e-mail saisis.'));
     } finally {
       setLoading(false);
     }

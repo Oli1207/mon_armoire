@@ -4,6 +4,7 @@ import { reviewsAPI } from '../utils/api';
 import useAuthStore from '../store/auth';
 import { StarInput, StarRating } from './Stars';
 import Lightbox from './Lightbox';
+import { errorText } from '../utils/errors';
 
 const MAX_PHOTOS = 6;
 const MAX_PHOTO_MB = 5;
@@ -98,9 +99,7 @@ function ReviewForm({ product, onPublished }) {
       setRating(0); setComment(''); setPhotos([]);
       onPublished();
     } catch (err) {
-      const body = err.response?.data;
-      const first = body && typeof body === 'object' && !body.error ? Object.values(body)[0] : null;
-      setError(body?.error || (Array.isArray(first) ? first[0] : null) || "Votre avis n'a pas pu être envoyé. Réessayez dans un instant.");
+      setError(errorText(err, 'Votre avis n’a pas pu être envoyé. Réessayez dans un instant.'));
     } finally {
       setSending(false);
     }

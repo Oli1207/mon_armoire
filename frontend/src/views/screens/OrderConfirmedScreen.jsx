@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
 import { ordersAPI, paymentsAPI } from '../../utils/api';
 import useAuthStore from '../../store/auth';
+import { errorText } from '../../utils/errors';
 
 const STATUS_LABELS = {
   pending: 'En attente de paiement', paid: 'Payée', processing: 'En préparation',
@@ -29,7 +30,7 @@ export default function OrderConfirmedScreen() {
       const { data } = await paymentsAPI.initiate(order.order_number, provider);
       window.location.href = data.checkout_url || data.authorization_url;
     } catch (err) {
-      setPayError(err.response?.data?.error || "Erreur lors de l'initialisation du paiement.");
+      setPayError(errorText(err, 'Le paiement n’a pas pu démarrer. Aucun montant n’a été débité ; réessayez.'));
       setPayingWith('');
     }
   };

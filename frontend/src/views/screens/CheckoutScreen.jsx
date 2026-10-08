@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import useCartStore from '../../store/cart';
 import useAuthStore from '../../store/auth';
 import { addressesAPI, deliveryZonesAPI, ordersAPI, giftcardsAPI, loyaltyAPI } from '../../utils/api';
+import { errorText } from '../../utils/errors';
 
 const CART_ID_KEY = 'ma_cart_id';
 
@@ -114,7 +115,7 @@ export default function CheckoutScreen() {
       const { data: order } = await ordersAPI.create(payload);
       navigate(`/commandes/${order.order_number}`, { state: { order } });
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de la création de la commande.');
+      setError(errorText(err, 'La commande n’a pas pu être créée. Vérifiez vos informations puis réessayez.'));
     } finally {
       setSubmitting(false);
     }

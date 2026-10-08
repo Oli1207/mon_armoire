@@ -262,3 +262,60 @@ class ImageOptimizationTests(APITestCase):
         image.refresh_from_db()
         self.assertIn('_thumb', image.thumbnail.name)
         self.assertTrue(image.thumbnail.name.endswith('.webp'))
+
+
+class SuggestionTests(APITestCase):
+    URL = '/api/products/suggestions/'
+
+    def setUp(self):
+        self.chains = Category.objects.create(name='Chaînes')
+        self.rings = Category.objects.create(name='Bagues')
+        make_products(self.chains, 3)            # Bijou 0..2 (chaînes)
+        make_products(self.rings, 3, start=3)    # Bijou 3..5 (bagues)
+
+    def names(self, response):
+        return [p['name'] for p in response.data]
+
+    def test_excludes_viewed_product_and_prefers_same_category(self):
+        response = self.client.get(self.URL, {'like': Product.objects.get(name='Bijou 0').slug})
+        self.assertEqual(response.status_code, 200)
+        names = self.names(response)
+        self.assertNotIn('Bijou 0', names)
+        self.assertEqual(set(names[:2]), {'Bijou 1', 'Bijou 2'})
+        self.assertEqual(len(names), 4)
+
+    def test_without_seed_returns_available_items_only(self):
+        sold_out = Product.objects.get(name='Bijou 5')
+        sold_out.variants.update(stock=0)
+        hidden = Product.objects.get(name='Bijou 4')
+        hidden.is_active = False
+        hidden.save()
+        names = self.names(self.client.get(self.URL))
+        self.assertNotIn('Bijou 5', names)
+        self.assertNotIn('Bijou 4', names)
+
+    def test_cart_seeds_exclude_every_item(self):
+        slugs = ','.join(Product.objects.filter(name__in=['Bijou 0', 'Bijou 3']).values_list('slug', flat=True))
+        names = self.names(self.client.get(self.URL, {'like': slugs}))
+        self.assertFalse({'Bijou 0', 'Bijou 3'} & set(names))
+
+    def test_garbage_input_is_harmless(self):
+        for like in ('', ',,,', 'inconnu', 'x' * 5000, ','.join(f's{i}' for i in range(200))):
+            self.assertEqual(self.client.get(self.URL, {'like': like}).status_code, 200, like[:20])
+
+    def test_query_count_is_constant(self):
+        slug = Product.objects.get(name='Bijou 0').slug
+        _, few = count_queries(self.client, self.URL, data={'like': slug})
+        make_products(self.chains, 20, start=10)
+        response, many = count_queries(self.client, self.URL, data={'like': slug})
+        self.assertEqual(len(response.data), 4)
+        self.assertEqual(few, many)
+
+    def test_cart_items_expose_product_slug(self):
+        user = User.objects.create_user(username='s1', email='s1@test.ci', password='Test-pass-123')
+        cart = Cart.objects.create(user=user)
+        product = Product.objects.get(name='Bijou 0')
+        CartItem.objects.create(cart=cart, variant=product.variants.get(stock=3), quantity=1)
+        self.client.force_authenticate(user)
+        response = self.client.get('/api/cart/', {'cart_id': str(cart.id)})
+        self.assertEqual(response.data['items'][0]['product_slug'], product.slug)

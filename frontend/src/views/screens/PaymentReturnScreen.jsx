@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { paymentsAPI } from '../../utils/api';
+import { errorText } from '../../utils/errors';
 
 export default function PaymentReturnScreen() {
   const [searchParams] = useSearchParams();
@@ -25,7 +26,7 @@ export default function PaymentReturnScreen() {
     }
     paymentsAPI.verify(orderNumber, provider)
       .then(({ data }) => setResult(data))
-      .catch((err) => setError(err.response?.data?.error || 'Erreur lors de la vérification du paiement.'))
+      .catch((err) => setError(errorText(err, 'Nous n’avons pas pu vérifier votre paiement. Si vous avez été débitée, contactez-nous avec votre numéro de commande.')))
       .finally(() => setLoading(false));
   }, [orderNumber, provider, errorParam]);
 

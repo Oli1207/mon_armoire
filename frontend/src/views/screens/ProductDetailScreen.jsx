@@ -7,6 +7,8 @@ import useCartStore from '../../store/cart';
 import { useLoadMore } from '../../utils/usePaginated';
 import ProductReviews from '../../components/ProductReviews';
 import { StarRating } from '../../components/Stars';
+import { errorText } from '../../utils/errors';
+import Suggestions from '../../components/Suggestions';
 
 export default function ProductDetailScreen() {
   const { slug } = useParams();
@@ -247,7 +249,7 @@ export default function ProductDetailScreen() {
                     await addVariant(variant.id, 1, false, '', engravingText.trim());
                     navigate('/panier');
                   } catch (err) {
-                    setAddError(err.response?.data?.error || "Impossible d'ajouter ce produit au panier.");
+                    setAddError(errorText(err, 'Impossible d’ajouter ce produit au panier.'));
                   } finally {
                     setAdding(false);
                   }
@@ -283,6 +285,10 @@ export default function ProductDetailScreen() {
       </div>
 
       <ProductReviews product={product} reviews={reviews} />
+
+      <div className="mt-5 pt-4 border-top">
+        <Suggestions like={[product.slug]} />
+      </div>
     </div>
   );
 }

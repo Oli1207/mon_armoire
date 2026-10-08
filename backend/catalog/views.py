@@ -2,7 +2,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from django.db.models import Avg, CharField, Count, OuterRef, Subquery, Value
+from django.db.models import Avg, Case, CharField, Count, Exists, IntegerField, OuterRef, Subquery, Value, When
 from django.db.models.functions import Coalesce, NullIf
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
@@ -118,6 +118,43 @@ def product_detail(request, slug):
         return Response({'error': 'Produit introuvable.'}, status=status.HTTP_404_NOT_FOUND)
     serializer = ProductDetailSerializer(product, context={'request': request})
     return Response(serializer.data)
+
+
+# ── Suggestions (« Vous aimerez aussi ») ─────────────────────────────────────
+SUGGESTION_COUNT = 4
+MAX_SEED_SLUGS = 10
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@public_cache(60)
+def product_suggestions(request):
+    """Articles à proposer en complément. `like` = slugs (séparés par des virgules) des articles consultés ou
+    déjà au panier : ils sont exclus, et on propose d'abord leur catégorie, puis leurs collections, puis les nouveautés.
+    Sans `like` : les nouveautés disponibles."""
+    raw = (request.query_params.get('like') or '')[:2000]
+    slugs = [s.strip()[:220] for s in raw.split(',') if s.strip()][:MAX_SEED_SLUGS]
+    seeds = Product.objects.filter(slug__in=slugs, is_active=True) if slugs else Product.objects.none()
+
+    through = Product.collections.through
+    same_collection = through.objects.filter(
+        product_id=OuterRef('pk'), collection_id__in=through.objects.filter(product__in=seeds).values('collection_id'),
+    )
+    qs = (
+        Product.objects.filter(is_active=True, variants__stock__gt=0)
+        .exclude(slug__in=slugs)
+        .select_related('category').prefetch_related('variants', 'images')
+        .annotate(
+            rank=Case(
+                When(category__in=seeds.values('category'), then=Value(0)),
+                When(Exists(same_collection), then=Value(1)),
+                default=Value(2), output_field=IntegerField(),
+            )
+        )
+        .distinct()
+        .order_by('rank', '-is_new', '-created_at', 'id')[:SUGGESTION_COUNT]
+    )
+    return Response(ProductListSerializer(qs, many=True, context={'request': request}).data)
 
 
 # ── Guide des symboles ────────────────────────────────────────────────────────

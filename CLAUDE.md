@@ -34,7 +34,7 @@ Avant de décider d'un réglage d'hébergement, regarder comment EthniSpirit l'a
 - **E-mail** : le serveur Exim local (`localhost:25`, sans SSL) a fonctionné ; `mail.<domaine>:465` SSL en alternative.
 - **Passenger** : `passenger_wsgi.py` + `.htaccess` (`PassengerAppRoot`, `PassengerPython`) dans le dossier du sous-domaine ; cron = `source virtualenv/activate && python manage.py <commande>`.
 - **Déploiement** : tout est dans `deploy/` (`DEPLOIEMENT_LWS.md` pas à pas, `backend.htaccess`, `media.htaccess`, `env.production.example`, `backup.sh`, `restore_test.sh`). Après chaque mise en ligne : `python manage.py preflight` doit être entièrement `OK`. Tâches cron : `expire_pending_orders` (horaire), `send_restock_notifications` (30 min), `send_daily_verse_push`, sauvegarde, `flushexpiredtokens`, `clearsessions`. Ne jamais lancer `seed_demo_*` en production.
-- Images : conversion WebP + miniature à l'envoi (`common/imaging.py`, branché par signaux sur tous les champs image) ; `manage.py generate_thumbnails` rattrape les anciennes photos.
+- Images : conversion WebP + miniature à l'envoi (`common/imaging.py`, branché par signaux sur tous les champs image) ; `manage.py optimize_images` (toutes les photos : WebP réduit + miniatures, idempotent, `--limit`, à relancer tant qu'il le demande) et `generate_thumbnails` rattrapent les anciennes photos. Polices Sketchy hébergées par le site (`@fontsource`, aucun Google Fonts) ; `preconnect` vers l'API injecté au build.
 
 ## Intégrité métier (commandes, stock, argent)
 

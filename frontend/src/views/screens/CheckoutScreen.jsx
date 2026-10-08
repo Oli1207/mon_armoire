@@ -134,7 +134,7 @@ export default function CheckoutScreen() {
 
       <div className="container py-5" style={{ maxWidth: 620 }}>
         {!cart ? (
-          <p className="text-center text-muted">Chargement...</p>
+          <div aria-busy="true" aria-label="Chargement"><div className="skeleton-row" /><div className="skeleton-row" /><div className="skeleton-row" /></div>
         ) : cart.items.length === 0 ? (
           <p className="text-center text-muted">Votre panier est vide.</p>
         ) : (

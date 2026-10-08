@@ -1,0 +1,23 @@
+/* ── Mobile : lisibilité de la police manuscrite (Neucha a une petite hauteur d'x), squelettes, bouton retour ── */
+:root { --bs-body-font-size: 1.125rem; --bs-body-line-height: 1.5; }
+.small, small { font-size: 0.9em; }
+.topbar { font-size: 0.8rem; letter-spacing: 0.06em; }
+.nav-link-plain { font-size: 0.9rem; letter-spacing: 0.06em; }
+.tracking-wide { letter-spacing: 0.06em; }
+.cart-count { font-size: 0.75rem; width: 1.25rem; height: 1.25rem; top: -0.35rem; right: -0.6rem; }
+.giftcard-visual-label { font-size: 0.8rem; letter-spacing: 0.1em; }
+
+.skeleton-block { aspect-ratio: 1 / 1; background-color: #ece5d6; border-radius: var(--bs-border-radius-sm); animation: skeleton-pulse 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .skeleton-block { animation: none; } }
+
+.back-bar { padding: 0.35rem 0.5rem 0; padding-left: max(0.5rem, env(safe-area-inset-left)); }
+.back-bar-btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  min-height: 2.75rem; padding: 0 0.75rem;
+  background: none; border: 0; color: var(--ma-brown); font-size: 1rem;
+}
+.back-bar-btn:active { background: var(--ma-cream); }
+
+/* Cibles tactiles ≥ 44 px */
+.rating-link { min-height: 2.75rem; }
+.product-card .card-body > .d-flex > a { display: inline-flex; align-items: center; min-height: 2.75rem; }

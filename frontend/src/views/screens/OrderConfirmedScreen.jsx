@@ -38,7 +38,7 @@ export default function OrderConfirmedScreen() {
   if (!order) {
     return (
       <div className="container py-5 text-center" style={{ maxWidth: 600 }}>
-        <p className="text-muted">Chargement...</p>
+        <div aria-busy="true" aria-label="Chargement"><div className="skeleton-row" /><div className="skeleton-row" /></div>
         <p className="text-muted small">
           Si rien ne s'affiche, utilisez la page <Link to="/suivi" className="text-gold">Suivre ma commande</Link> avec le numéro {orderNumber}.
         </p>

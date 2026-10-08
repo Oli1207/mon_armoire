@@ -5,6 +5,7 @@ import useCartStore from '../../store/cart';
 import { useDebounced } from '../../utils/usePaginated';
 import { errorText } from '../../utils/errors';
 import Suggestions from '../../components/Suggestions';
+import DetailSkeleton from '../../components/DetailSkeleton';
 
 export default function CoffretConfiguratorScreen() {
   const { slug } = useParams();
@@ -18,10 +19,15 @@ export default function CoffretConfiguratorScreen() {
   const [extraResults, setExtraResults] = useState([]);
   const debouncedQuery = useDebounced(extraQuery.trim());
   const [error, setError] = useState('');
+  const [loadError, setLoadError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    coffretsAPI.detail(slug).then(({ data }) => setCoffret(data));
+    setCoffret(null);
+    setLoadError('');
+    coffretsAPI.detail(slug).then(({ data }) => setCoffret(data)).catch((err) => setLoadError(
+      err.response?.status === 404 ? 'missing' : errorText(err, 'Cette page n’a pas pu être chargée.'),
+    ));
   }, [slug]);
 
   useEffect(() => {
@@ -36,7 +42,18 @@ export default function CoffretConfiguratorScreen() {
     return () => { cancelled = true; };
   }, [debouncedQuery]);
 
-  if (!coffret) return <div className="container py-5">Chargement...</div>;
+  if (loadError) {
+    return (
+      <div className="container py-5 text-center" style={{ maxWidth: '36rem' }}>
+        <h1 className="h3 mb-3">{loadError === 'missing' ? 'Ce coffret n’est plus disponible' : 'Oups, la page n’a pas pu s’afficher'}</h1>
+        <p className="text-muted mb-4">{loadError === 'missing' ? 'Découvrez nos autres coffrets.' : loadError}</p>
+        <button type="button" className="btn btn-primary" onClick={() => (loadError === 'missing' ? navigate('/coffrets') : window.location.reload())}>
+          {loadError === 'missing' ? 'Voir les coffrets' : 'Réessayer'}
+        </button>
+      </div>
+    );
+  }
+  if (!coffret) return <DetailSkeleton />;
 
   const handleSelect = (slotId, variantId) => {
     setSelections((prev) => ({ ...prev, [slotId]: variantId }));

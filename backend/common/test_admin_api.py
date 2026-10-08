@@ -225,3 +225,37 @@ class ResetShopDataTests(APITestCase):
         self.assertEqual((Order.objects.count(), Cart.objects.count(), GiftCard.objects.count(), Review.objects.count()), (0, 0, 0, 0))
         self.assertEqual(list(User.objects.values_list('email', flat=True)), [staff.email])
         self.assertEqual((Product.objects.count(), ProductVariant.objects.count(), DeliveryZone.objects.count()), (1, 1, 1))
+
+
+class OptimizeImagesCommandTests(APITestCase):
+    def test_converts_legacy_jpeg_and_is_idempotent(self):
+        import tempfile
+        from io import BytesIO, StringIO
+
+        from django.core.files.base import ContentFile
+        from django.core.files.storage import default_storage
+        from django.core.management import call_command
+        from django.test import override_settings
+        from PIL import Image
+
+        from coffrets.models import Coffret
+
+        with tempfile.TemporaryDirectory() as media, override_settings(MEDIA_ROOT=media):
+            buffer = BytesIO()
+            Image.new('RGB', (2400, 1800), (200, 30, 30)).save(buffer, format='JPEG')
+            default_storage.save('coffrets/ancien.jpg', ContentFile(buffer.getvalue()))
+            coffret = Coffret.objects.create(name='Ancien coffret')
+            Coffret.objects.filter(pk=coffret.pk).update(image='coffrets/ancien.jpg')
+
+            call_command('optimize_images', stdout=StringIO())
+            coffret.refresh_from_db()
+            self.assertTrue(coffret.image.name.endswith('.webp'))
+            with default_storage.open(coffret.image.name) as f:
+                self.assertLessEqual(max(Image.open(f).size), 1400)
+
+            out = StringIO()
+            name = coffret.image.name
+            call_command('optimize_images', stdout=out)
+            coffret.refresh_from_db()
+            self.assertEqual(coffret.image.name, name)
+            self.assertIn('0 image(s)', out.getvalue())

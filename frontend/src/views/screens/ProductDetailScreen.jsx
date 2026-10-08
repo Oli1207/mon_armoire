@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { FaHeart, FaRegHeart, FaWhatsapp, FaFacebook, FaLink } from 'react-icons/fa';
 import { productsAPI, favoritesAPI, reviewsAPI, waitlistAPI } from '../../utils/api';
@@ -9,6 +9,7 @@ import ProductReviews from '../../components/ProductReviews';
 import { StarRating } from '../../components/Stars';
 import { errorText } from '../../utils/errors';
 import Suggestions from '../../components/Suggestions';
+import DetailSkeleton from '../../components/DetailSkeleton';
 
 export default function ProductDetailScreen() {
   const { slug } = useParams();
@@ -18,7 +19,7 @@ export default function ProductDetailScreen() {
   const [product, setProduct] = useState(null);
   const [variant, setVariant] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [notFound, setNotFound] = useState(false);
+  const [loadError, setLoadError] = useState(null);
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
@@ -29,15 +30,24 @@ export default function ProductDetailScreen() {
   const [waitlistError, setWaitlistError] = useState('');
   const [joiningWaitlist, setJoiningWaitlist] = useState(false);
 
-  useEffect(() => {
+  const loadProduct = useCallback(() => {
+    setLoadError(null);
     productsAPI.detail(slug)
       .then(({ data }) => {
         setProduct(data);
         setVariant(data.variants.find((v) => v.is_default) || data.variants[0] || null);
         setActiveImage(null);
       })
-      .catch(() => setNotFound(true));
+      .catch((err) => setLoadError({
+        missing: err.response?.status === 404,
+        message: errorText(err, 'Cette page n’a pas pu être chargée.'),
+      }));
   }, [slug]);
+
+  useEffect(() => {
+    setProduct(null);
+    loadProduct();
+  }, [loadProduct]);
 
   useEffect(() => {
     if (!isAuthenticated || !product) return;
@@ -79,8 +89,18 @@ export default function ProductDetailScreen() {
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
-  if (notFound) return <div className="container py-5">Produit introuvable.</div>;
-  if (!product) return <div className="container py-5">Chargement...</div>;
+  if (loadError) {
+    return (
+      <div className="container py-5 text-center" style={{ maxWidth: '36rem' }}>
+        <h1 className="h3 mb-3">{loadError.missing ? 'Ce bijou n’est plus disponible' : 'Oups, la page n’a pas pu s’afficher'}</h1>
+        <p className="text-muted mb-4">{loadError.missing ? 'Il a peut-être été retiré de la boutique. Découvrez nos autres créations.' : loadError.message}</p>
+        {loadError.missing
+          ? <Link to="/catalogue" className="btn btn-primary">Voir tous les bijoux</Link>
+          : <button type="button" className="btn btn-primary" onClick={loadProduct}>Réessayer</button>}
+      </div>
+    );
+  }
+  if (!product) return <DetailSkeleton />;
 
   return (
     <div className="container py-5">
@@ -140,7 +160,7 @@ export default function ProductDetailScreen() {
           </div>
 
           {reviews.summary?.count > 0 && (
-            <a href="#avis" className="d-inline-flex align-items-center gap-2 mb-2 text-decoration-none">
+            <a href="#avis" className="rating-link d-inline-flex align-items-center gap-2 text-decoration-none">
               <StarRating value={reviews.summary.average} size="1.1rem" />
               <span className="small">{String(reviews.summary.average).replace('.', ',')} ({reviews.summary.count} avis)</span>
             </a>

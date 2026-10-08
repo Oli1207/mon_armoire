@@ -1,7 +1,11 @@
 import { Suspense, useEffect, useLayoutEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigationType } from 'react-router-dom';
+import '@fontsource/neucha/latin-400.css';
+import '@fontsource/cabin-sketch/latin-400.css';
+import '@fontsource/cabin-sketch/latin-700.css';
 import 'bootswatch/dist/sketchy/bootstrap.min.css';
 import './index.css';
+import './mobile.css';
 
 import useAuthStore from './store/auth';
 
@@ -10,6 +14,7 @@ import Footer from './components/Footer';
 import InstallPrompt from './components/InstallPrompt';
 import PrivateRoute from './layout/PrivateRoute';
 import ErrorBoundary from './components/ErrorBoundary';
+import BackBar from './components/BackBar';
 import PageSkeleton from './components/PageSkeleton';
 import lazyWithRetry from './utils/lazyWithRetry';
 
@@ -55,6 +60,15 @@ const AdminOccasionsScreen = lazyWithRetry(() => import('./views/admin/AdminOcca
 const AdminSymbolsScreen = lazyWithRetry(() => import('./views/admin/AdminSymbolsScreen'));
 const AdminLookbookScreen = lazyWithRetry(() => import('./views/admin/AdminLookbookScreen'));
 
+const PRELOAD = [
+  () => import('./views/screens/CatalogueScreen'),
+  () => import('./views/screens/ProductDetailScreen'),
+  () => import('./views/screens/CartScreen'),
+  () => import('./views/screens/CoffretsListScreen'),
+  () => import('./views/screens/CoffretConfiguratorScreen'),
+  () => import('./views/screens/CheckoutScreen'),
+];
+
 // Nouvelle page = on repart en haut (sinon on arrive en bas si on était en bas de la précédente).
 // Retour/avance du navigateur : on laisse le navigateur rétablir la position. Changer seulement un filtre
 // (?page=, ?category=) ne fait pas remonter la page.
@@ -89,10 +103,21 @@ function App() {
     fetchMe();
   }, []);
 
+  // Une fois l'accueil affiché, on télécharge en arrière-plan les pages les plus visitées : le clic suivant est instantané.
+  // Rien si la personne a activé l'économiseur de données ou si la connexion est très lente.
+  useEffect(() => {
+    const connection = navigator.connection;
+    if (connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || '')) return undefined;
+    const warm = () => PRELOAD.forEach((load) => load().catch(() => {}));
+    const id = typeof requestIdleCallback === 'function' ? requestIdleCallback(warm, { timeout: 4000 }) : setTimeout(warm, 2500);
+    return () => (typeof cancelIdleCallback === 'function' ? cancelIdleCallback(id) : clearTimeout(id));
+  }, []);
+
   return (
     <BrowserRouter>
       <ScrollToTop />
       <Navbar />
+      <BackBar />
       <SafeRoutes>
       <Routes>
         <Route path="/" element={<HomeScreen />} />

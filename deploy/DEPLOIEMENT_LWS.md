@@ -114,7 +114,7 @@ python manage.py migrate
 python manage.py collectstatic --noinput
 python manage.py createsuperuser            # compte du back-office (e-mail + mot de passe fort)
 python manage.py seed_verses                # versets de la rotation quotidienne
-python manage.py generate_thumbnails        # miniatures des photos déjà envoyées
+python manage.py optimize_images           # convertit en WebP léger toutes les photos déjà envoyées (relancer si « Relancez pour continuer »)
 ```
 
 Contenus éditoriaux (guide des symboles, lookbook, occasions) : `python manage.py seed_content` crée des entrées modèles ; les relire dans le back-office avant d'ouvrir.
@@ -214,7 +214,7 @@ Sans secret configuré, le serveur **refuse** les webhooks (réponse 503) : c'es
 | API : erreur 500 « Apache » (page HTML) et verset qui reste sur « Chargement… » | le `.htaccess` du site est hérité par le sous-domaine `backend` : vérifier que `public_html/.htaccess` contient la règle `RewriteCond %{HTTP_HOST} ^backend\.` suivie de `RewriteRule ^ - [L]` (avant la règle `/index.html`) |
 | Page blanche sur `monarmoire.store` | `index.html` absent de `public_html/` |
 | 404 en rechargeant `/catalogue` | `.htaccess` absent de `public_html/` (fichier caché) |
-| Photos cassées | `MEDIA_ROOT`/`MEDIA_URL` du `.env` ; photos présentes dans `public_html/media/` ; lancer `generate_thumbnails` |
+| Photos cassées | `MEDIA_ROOT`/`MEDIA_URL` du `.env` ; photos présentes dans `public_html/media/` ; lancer `optimize_images` |
 | Erreur CORS dans la console du navigateur | `CORS_ALLOWED_ORIGINS` du `.env` ; redémarrer l'application |
 | Boucle de redirections HTTPS | `SECURE_PROXY_SSL_HEADER_ENABLED=True` |
 | Paiement fait mais commande « En attente » | webhook non déclaré ou secret erroné (étape 9) ; la page de retour du client déclenche aussi la vérification |

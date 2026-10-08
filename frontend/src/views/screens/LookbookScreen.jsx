@@ -43,7 +43,7 @@ export default function LookbookScreen() {
 
       <div className="container py-5">
         {loading ? (
-          <p className="text-center text-muted">Chargement...</p>
+          <div aria-busy="true" aria-label="Chargement"><div className="skeleton-block" /></div>
         ) : looks.length === 0 ? (
           <p className="text-center text-muted">Aucun look pour le moment.</p>
         ) : (

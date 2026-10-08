@@ -50,6 +50,25 @@ export default function AdminLayout() {
     return () => meta.remove();
   }, []);
 
+  // Sur téléphone, chaque tableau devient une liste de fiches : on recopie l'intitulé de la colonne sur chaque cellule
+  // (CSS : `td::before`). Même contenu et mêmes actions que sur ordinateur.
+  useEffect(() => {
+    const label = () => {
+      document.querySelectorAll('.admin-table').forEach((table) => {
+        const heads = [...table.querySelectorAll('thead th')].map((th) => th.textContent.trim());
+        table.querySelectorAll('tbody tr').forEach((row) => {
+          [...row.children].forEach((cell, i) => {
+            if (heads[i] && cell.getAttribute('data-label') !== heads[i]) cell.setAttribute('data-label', heads[i]);
+          });
+        });
+      });
+    };
+    label();
+    const observer = new MutationObserver(label);
+    observer.observe(document.querySelector('.admin-shell'), { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <AdminUiProvider>
       <div className="admin-shell">

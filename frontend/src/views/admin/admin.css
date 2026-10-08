@@ -40,8 +40,8 @@
   padding: 0 1rem;
   color: var(--ma-text);
   text-decoration: none;
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
   border-bottom: 3px solid transparent;
@@ -207,9 +207,9 @@
   padding: 0.8rem 1rem;
   background: var(--ma-bg);
   border-bottom: 1px solid #e5ddd0;
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  letter-spacing: 0.13em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #7a6f5f;
   white-space: nowrap;
@@ -448,3 +448,49 @@ a.admin-link { display: inline-flex; align-items: center; }
   border-radius: var(--bs-border-radius-sm);
 }
 .admin-tabs button.is-active { background: var(--ma-brown); color: #fff; }
+
+
+/* ── Téléphone : chaque ligne de tableau devient une fiche (mêmes informations, mêmes actions qu'à l'écran large) ── */
+@media (max-width: 767.98px) {
+  .admin-table-wrap { background: none; border: 0; overflow: visible; }
+  .admin-table, .admin-table tbody, .admin-table tr, .admin-table td { display: block; width: 100%; }
+  .admin-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .admin-table tbody tr {
+    margin-bottom: 0.9rem;
+    padding: 0.35rem 0;
+    background: #fff;
+    border: 2px solid #333;
+    border-radius: var(--bs-border-radius-sm);
+  }
+  .admin-table tbody tr:hover { background: #fff; }
+  .admin-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.55rem 1rem;
+    border-bottom: 1px dashed #e5ddd0;
+    text-align: right;
+  }
+  .admin-table tbody tr td:last-child { border-bottom: 0; }
+  .admin-table td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    max-width: 45%;
+    text-align: left;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #7a6f5f;
+  }
+  .admin-table td:not([data-label])::before { content: none; }
+  .admin-table td:not([data-label]) { justify-content: flex-start; }
+  .admin-table .cell-actions { justify-content: flex-end; flex-wrap: wrap; white-space: normal; }
+  .admin-table td > a:first-child:last-child, .admin-table td > strong { text-align: right; }
+}
+
+/* Téléphone : liens de tableau et de listes faciles à toucher (≥ 44 px) */
+@media (max-width: 767.98px) {
+  .admin-table td a:not(.admin-link) { display: inline-flex; align-items: center; min-height: 2.75rem; }
+  .admin-row-line a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+}

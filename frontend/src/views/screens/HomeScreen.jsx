@@ -54,7 +54,7 @@ export default function HomeScreen() {
   return (
     <div>
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="hero-section py-5" style={{ '--hero-bg-image': "url('/images/hero.jpeg')" }}>
+      <section className="hero-section py-5" style={{ '--hero-bg-image': "url('/images/hero.webp')" }}>
         <div className="container">
           <div className="row align-items-center g-5">
             <div className="col-lg-6">

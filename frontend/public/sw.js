@@ -1,6 +1,6 @@
 // Trois caches : la coque de l'application, les fichiers hachés de Vite (jamais modifiés) et les médias (photos).
 // Incrémenter VERSION force le nettoyage des anciens caches au prochain déploiement.
-const VERSION = 'v2';
+const VERSION = 'v3';
 const SHELL_CACHE = `ma-shell-${VERSION}`;
 const ASSET_CACHE = `ma-assets-${VERSION}`;
 const MEDIA_CACHE = `ma-media-${VERSION}`;

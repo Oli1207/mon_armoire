@@ -20,7 +20,7 @@ Toute fonctionnalité doit être compatible. Donc **interdit / à éviter** :
 - Cache : cache base de données ou fichiers (`DatabaseCache` / `FileBasedCache`), jamais `LocMemCache` pour des données devant être cohérentes (plusieurs processus Passenger). Prévoir une invalidation explicite.
 - Python via « Setup Python App » (Passenger) : un redémarrage = `tmp/restart.txt`. Pas de `runserver`, pas de Node en production : le frontend est **buildé** (`npm run build`) et servi en statique.
 - Statique/médias : servis par Apache (collectstatic, WhiteNoise éventuel pour le statique ; médias via dossier public avec règles .htaccess). Pas de S3 sauf décision explicite.
-- Base : **PostgreSQL** (confirmé par l'utilisateur). Index GIN/`pg_trgm` possibles pour la recherche, mais vérifier que l'extension est activable sur LWS avant de s'y fier ; pool de connexions limité sur mutualisé (`CONN_MAX_AGE` modéré).
+- Base : **PostgreSQL** (confirmé par l'utilisateur). **Aucune extension PostgreSQL disponible sur LWS** (`pg_trgm` absente, constaté au premier `migrate`) : ne jamais en exiger ; toute fonction qui en profite doit avoir un repli (`catalog/search.py`) ; pool de connexions limité sur mutualisé (`CONN_MAX_AGE` modéré).
 - Mémoire/CPU/processus limités : pas de traitement lourd dans une requête HTTP (images, PDF, emails en masse → commande cron ou génération à l'upload bornée).
 - E-mails : SMTP du compte cPanel (envoi limité par heure → file d'envoi en base + cron, jamais d'envoi massif synchrone).
 - Secrets uniquement par variables d'environnement (jamais dans le dépôt). `DEBUG=False`, `ALLOWED_HOSTS`, `CORS`, `CSRF_TRUSTED_ORIGINS` explicites en production.

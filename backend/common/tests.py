@@ -14,7 +14,7 @@ class PreflightTests(TestCase):
         results = run_checks()
         messages = ' | '.join(message for _, message in results)
         self.assertIn('PostgreSQL', messages)
-        self.assertTrue(any(level == OK and 'pg_trgm' in message for level, message in results))
+        self.assertTrue(any(level != FAIL and 'pg_trgm' in message for level, message in results))
         self.assertTrue(any(level == OK and 'migrations à jour' in message for level, message in results))
 
     @override_settings(SECRET_KEY='court')

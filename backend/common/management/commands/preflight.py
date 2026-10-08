@@ -50,7 +50,7 @@ def run_checks():
             cursor.execute("SELECT count(*) FROM pg_extension WHERE extname = 'pg_trgm'")
             trigram = cursor.fetchone()[0] > 0
         add(OK if version >= MIN_PG_VERSION else FAIL, f'PostgreSQL {version // 10000}.{version % 10000} joignable')
-        add(OK if trigram else FAIL, 'extension pg_trgm (recherche) installée' if trigram else 'extension pg_trgm absente (la recherche échouera)')
+        add(OK if trigram else WARN, 'extension pg_trgm installée : recherche tolérante aux fautes de frappe' if trigram else 'extension pg_trgm absente (normal sur LWS) : recherche en mode simple, sans tolérance aux fautes de frappe')
         pending = MigrationExecutor(connection).migration_plan(MigrationExecutor(connection).loader.graph.leaf_nodes())
         add(OK if not pending else FAIL, 'migrations à jour' if not pending else f'{len(pending)} migration(s) non appliquée(s) : lancer « python manage.py migrate »')
     except Exception as exc:  # noqa: BLE001 : on veut le message, quel qu'il soit

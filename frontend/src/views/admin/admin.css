@@ -545,3 +545,18 @@ a.admin-link { display: inline-flex; align-items: center; }
   font-size: 0.95rem;
 }
 .admin-alerts.is-on { border-left-color: var(--ma-brown); }
+
+/* Didactiel : panneau non bloquant et élément entouré */
+.admin-tour {
+  position: fixed; z-index: 1060; left: 0.75rem; right: 0.75rem; bottom: max(0.75rem, env(safe-area-inset-bottom));
+  padding: 1rem 1.1rem; background: #fff; border: 2px solid #333; border-top: 6px solid var(--ma-gold); border-radius: var(--bs-border-radius-sm);
+  max-height: 55dvh; overflow-y: auto;
+}
+@media (min-width: 768px) { .admin-tour { left: auto; right: 1.5rem; bottom: 1.5rem; width: 26rem; } }
+.admin-tour-count { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: #7a6f5f; margin-bottom: 0.25rem; }
+.admin-tour-title { font-size: 1.2rem; margin-bottom: 0.5rem; }
+.admin-tour-body { margin-bottom: 0.9rem; font-size: 1rem; }
+.admin-tour-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.tour-highlight { outline: 4px solid var(--ma-gold); outline-offset: 4px; position: relative; z-index: 5; animation: tour-pulse 1.4s ease-in-out infinite; }
+@keyframes tour-pulse { 50% { outline-color: rgba(201, 162, 39, 0.35); } }
+@media (prefers-reduced-motion: reduce) { .tour-highlight { animation: none; } }

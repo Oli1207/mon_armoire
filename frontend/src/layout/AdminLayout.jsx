@@ -6,6 +6,7 @@ import useAuthStore from '../store/auth';
 import { can } from '../utils/permissions';
 import { allowedGroups } from './adminNav';
 import StaffAlerts from '../views/admin/ui/StaffAlerts';
+import AdminTour from '../views/admin/tour/AdminTour';
 
 export default function AdminLayout() {
   const { user } = useAuthStore();
@@ -47,7 +48,7 @@ export default function AdminLayout() {
             <div className="admin-nav-group" key={group.title}>
               <p className="admin-nav-title">{group.title}</p>
               {group.links.map((link) => (
-                <NavLink key={link.to} to={link.to} end={link.end}>{link.label}</NavLink>
+                <NavLink key={link.to} to={link.to} end={link.end} data-tour={link.to}>{link.label}</NavLink>
               ))}
             </div>
           ))}
@@ -55,6 +56,7 @@ export default function AdminLayout() {
         <main>
           <StaffAlerts />
           <Outlet />
+          <AdminTour />
         </main>
       </div>
     </AdminUiProvider>

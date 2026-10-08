@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { PageHeader } from './ui/parts';
+import { START_TOUR_EVENT } from './tour/AdminTour';
 
 const TASKS = [
   {
@@ -177,6 +178,11 @@ export default function AdminHelpScreen() {
         kicker="Aide" title="Guide pas à pas"
         lead="Les gestes du quotidien expliqués simplement. Cliquez sur une ligne pour lire les étapes. Chaque modification s’enregistre en cliquant en dehors de la case, et un message vert le confirme : si vous voyez un message rouge, lisez-le, il explique quoi faire."
       />
+      <div className="admin-card d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span>Un tour guidé de l’Admin, adapté à votre rôle, en 2 minutes.</span>
+        <button type="button" className="btn btn-primary" data-tour-replay onClick={() => window.dispatchEvent(new Event(START_TOUR_EVENT))}>Revoir le didactiel</button>
+      </div>
+
       <h2 className="admin-card-title">Comment faire pour…</h2>
       <Guide items={TASKS} />
       <h2 className="admin-card-title mt-4">Quelque chose ne va pas</h2>

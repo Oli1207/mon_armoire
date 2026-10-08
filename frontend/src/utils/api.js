@@ -6,6 +6,7 @@ export const authAPI = {
   register:       (data) => axiosInstance.post('/api/auth/register/', data),
   me:             ()     => axiosInstance.get('/api/auth/me/'),
   updateProfile:  (data) => axiosInstance.patch('/api/auth/me/update/', data),
+  markTourSeen:   ()     => axiosInstance.post('/api/auth/me/tour/'),
   changePassword: (data) => axiosInstance.post('/api/auth/me/password/', data),
   forgotPassword: (data) => axiosInstance.post('/api/auth/forgot-password/', data),
   resetPassword:  (data) => axiosInstance.post('/api/auth/reset-password/', data),

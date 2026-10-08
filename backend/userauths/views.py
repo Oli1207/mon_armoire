@@ -2,6 +2,7 @@ import time
 
 from django.conf import settings
 from django.core.mail import send_mail
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -54,6 +55,17 @@ def register_view(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def me_view(request):
+    return Response(UserSerializer(request.user).data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def tour_seen_view(request):
+    """Le didactiel de l'Admin a été terminé ou passé : il ne se relance plus tout seul (la personne peut le revoir à la demande)."""
+    if not request.user.is_staff:
+        return Response(status=status.HTTP_403_FORBIDDEN)
+    request.user.tour_seen_at = timezone.now()
+    request.user.save(update_fields=['tour_seen_at'])
     return Response(UserSerializer(request.user).data)
 
 

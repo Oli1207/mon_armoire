@@ -178,3 +178,20 @@ class AuditLogTests(APITestCase):
         self.assertEqual(self.client.get('/api/auth/admin/journal/', {'action': 'deleted'}).data['count'], 0)
         self.client.force_authenticate(make_staff('mgr@test.ci', 'manager'))
         self.assertEqual(self.client.get('/api/auth/admin/journal/').status_code, 403)
+
+
+class TourTests(APITestCase):
+    def test_tour_is_remembered_per_staff_account_and_refused_to_customers(self):
+        owner = User.objects.create_user(username='boss', email='boss@test.ci', password='x', is_staff=True, is_superuser=True)
+        member = make_staff('prep@test.ci', 'orders')
+        customer = User.objects.create_user(username='c', email='c@test.ci', password='x')
+        self.client.force_authenticate(owner)
+        self.assertFalse(self.client.get('/api/auth/me/').data['staff']['tour_seen'])
+        self.assertTrue(self.client.post('/api/auth/me/tour/').data['staff']['tour_seen'])
+        self.assertTrue(self.client.get('/api/auth/me/').data['staff']['tour_seen'])
+        self.client.force_authenticate(member)
+        self.assertFalse(self.client.get('/api/auth/me/').data['staff']['tour_seen'])   # chaque personne a son propre didactiel
+        self.client.force_authenticate(customer)
+        self.assertEqual(self.client.post('/api/auth/me/tour/').status_code, 403)
+        self.client.force_authenticate(None)
+        self.assertEqual(self.client.post('/api/auth/me/tour/').status_code, 401)

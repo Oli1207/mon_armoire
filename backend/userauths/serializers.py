@@ -85,6 +85,7 @@ class UserSerializer(serializers.ModelSerializer):
             'is_owner': user.is_superuser,
             'role': 'Propriétaire' if user.is_superuser else ROLES.get(profile.role, (profile.role,))[0],
             'permissions': sorted(perms),
+            'tour_seen': user.tour_seen_at is not None,
         }
 
 

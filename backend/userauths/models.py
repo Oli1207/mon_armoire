@@ -20,6 +20,7 @@ class User(UUIDModel, AbstractUser):
     full_name   = models.CharField(max_length=200, blank=True)
     phone       = models.CharField(max_length=30, blank=True)
     otp         = models.CharField(max_length=10, blank=True, null=True)
+    tour_seen_at = models.DateTimeField(null=True, blank=True, help_text="Date à laquelle la personne a terminé ou passé le didactiel de l'Admin")
     reset_token = models.CharField(max_length=200, blank=True, null=True)
 
     referral_code      = models.CharField(max_length=12, unique=True, blank=True, editable=False)

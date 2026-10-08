@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import transaction
-from django.conf import settings
+from django.utils.crypto import get_random_string
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
@@ -10,7 +10,6 @@ from rest_framework.response import Response
 from catalog.models import ProductVariant
 from coffrets.models import CoffretConfiguration
 from userauths.models import User, Address, unique_username
-from userauths.tokens import issue_reset_token
 from .models import Cart, CartItem, DeliveryZone, GiftCard, LOYALTY_POINT_VALUE, LoyaltyTransaction, Order, OrderItem, OrderStatusHistory
 from common.pagination import paginate
 from .queries import order_queryset, serialize_cart, serialize_order
@@ -236,7 +235,7 @@ def _build_order(request):
     address = None
     delivery_zone = None
     shipping_cost = 0
-    account_setup_url = None
+    generated_password = None
 
     if user:
         # ── Client connecté : adresse existante requise pour la livraison ────
@@ -265,12 +264,12 @@ def _build_order(request):
         if create_account:
             if User.objects.filter(email=guest_email).exists():
                 raise OrderError('Un compte existe déjà avec cet email. Connectez-vous pour continuer.')
-            # Pas de mot de passe envoyé par e-mail : la cliente le choisit via un lien (valable 1 h, ensuite « Mot de passe oublié »)
+            # Choix du client : mot de passe temporaire aléatoire envoyé par e-mail (à changer depuis « Mon compte »)
+            generated_password = get_random_string(12)
             user = User.objects.create_user(
                 username=unique_username(guest_email), email=guest_email,
-                full_name=full_name, phone=phone, password=None,
+                full_name=full_name, phone=phone, password=generated_password,
             )
-            account_setup_url = f'{settings.FRONTEND_URL}/reset-password?token={issue_reset_token(user)}'
 
         if delivery_method == 'shipping':
             city   = str(request.data.get('city') or '').strip()[:100]
@@ -359,7 +358,7 @@ def _build_order(request):
     if order.total <= 0:
         mark_order_paid(order, note='Payée intégralement (carte cadeau / points de fidélité).', notify=False)
 
-    transaction.on_commit(lambda: send_order_confirmation_email(order, account_setup_url=account_setup_url))
+    transaction.on_commit(lambda: send_order_confirmation_email(order, generated_password=generated_password))
     return order
 
 

@@ -40,7 +40,7 @@ Avant de décider d'un réglage d'hébergement, regarder comment EthniSpirit l'a
 
 - Toute transition de statut de commande passe par `orders/services.py` (`mark_order_paid`, `cancel_unpaid_order`) : verrou de ligne + statut revérifié, donc idempotent (webhook + retour client + admin simultanés).
 - Toute lecture-puis-écriture sur un solde (carte cadeau, points, stock) se fait dans `transaction.atomic()` avec `select_for_update()` ou `UPDATE ... WHERE stock >= n`. Les e-mails partent via `transaction.on_commit`.
-- Aucun mot de passe n'est jamais envoyé par e-mail : compte créé à la commande = lien « choisir mon mot de passe » (`userauths/tokens.py`). Les routes publiques (retour de paiement, suivi) ne renvoient jamais adresse/téléphone sans preuve (e-mail).
+- Compte créé à la commande : mot de passe temporaire aléatoire (12 caractères, `get_random_string`) **envoyé en clair par e-mail — choix explicite de l'utilisateur** (ne pas le « corriger »). Les routes publiques (retour de paiement, suivi) ne renvoient jamais adresse/téléphone sans preuve (e-mail).
 - Toute valeur numérique venue du client est bornée et validée (quantités 1–20, montants finis, jamais `int(request.data[...])` nu). Les codes (commande, carte cadeau) viennent de `secrets`.
 - Tâche cron à planifier : `python manage.py expire_pending_orders` (toutes les heures) .
 

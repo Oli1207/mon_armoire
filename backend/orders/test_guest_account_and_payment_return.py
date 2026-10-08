@@ -23,27 +23,34 @@ class GuestAccountTests(APITestCase):
                 'full_name': 'Nouvelle Cliente', 'phone': '0102030405', 'create_account': True,
             }, format='json')
 
-    def test_account_is_created_without_any_emailed_password(self):
+    def temporary_password_from_email(self):
+        line = next(l for l in mail.outbox[-1].body.splitlines() if l.startswith('Mot de passe temporaire :'))
+        return line.split(':', 1)[1].strip()
+
+    def test_temporary_password_is_emailed_and_works_for_login(self):
         response = self.order_as_guest()
         self.assertEqual(response.status_code, 201, response.content)
-        user = User.objects.get(email='nouvelle@test.ci')
-        self.assertFalse(user.has_usable_password())
-        body = mail.outbox[-1].body
-        self.assertNotIn('Mot de passe temporaire', body)
-        self.assertIn('/reset-password?token=', body)
-
-    def test_link_in_the_email_lets_her_choose_a_password(self):
-        self.order_as_guest()
-        token = mail.outbox[-1].body.split('token=')[1].split()[0]
-        reset = self.client.post('/api/auth/reset-password/', {'token': token, 'new_password': 'Mon-mot-de-passe-9'}, format='json')
-        self.assertEqual(reset.status_code, 200, reset.content)
-        login = self.client.post('/api/auth/token/', {'email': 'nouvelle@test.ci', 'password': 'Mon-mot-de-passe-9'}, format='json')
+        password = self.temporary_password_from_email()
+        self.assertEqual(len(password), 12)
+        login = self.client.post('/api/auth/token/', {'email': 'nouvelle@test.ci', 'password': password}, format='json')
         self.assertEqual(login.status_code, 200, login.content)
 
-    def test_token_is_stored_hashed(self):
+    def test_each_account_gets_a_different_random_password(self):
         self.order_as_guest()
-        token = mail.outbox[-1].body.split('token=')[1].split()[0]
-        self.assertNotEqual(User.objects.get(email='nouvelle@test.ci').reset_token, token)
+        first = self.temporary_password_from_email()
+        other_cart = Cart.objects.create()
+        CartItem.objects.create(cart=other_cart, variant=self.variant, quantity=1)
+        with self.captureOnCommitCallbacks(execute=True):
+            self.client.post('/api/orders/', {
+                'cart_id': str(other_cart.id), 'delivery_method': 'pickup', 'email': 'autre@test.ci',
+                'full_name': 'Autre', 'phone': '0102030405', 'create_account': True,
+            }, format='json')
+        self.assertNotEqual(first, self.temporary_password_from_email())
+
+    def test_password_is_not_stored_in_clear(self):
+        self.order_as_guest()
+        password = self.temporary_password_from_email()
+        self.assertNotIn(password, User.objects.get(email='nouvelle@test.ci').password)
 
 
 class PaymentReturnPrivacyTests(APITestCase):

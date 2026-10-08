@@ -11,7 +11,7 @@ STATUS_LABELS = {
 }
 
 
-def send_order_confirmation_email(order, account_setup_url=None):
+def send_order_confirmation_email(order, generated_password=None):
     recipient = order.contact_email
     if not recipient:
         return
@@ -35,13 +35,13 @@ def send_order_confirmation_email(order, account_setup_url=None):
     elif order.address:
         lines.append(f"Livraison à : {order.address.full_name}, {order.address.city}, {order.address.street}")
 
-    if account_setup_url:
+    if generated_password:
         lines += [
             "",
-            "Un compte Mon Armoire a été créé pour vous afin de suivre vos commandes.",
-            "Choisissez votre mot de passe en cliquant sur ce lien (valable 1 heure) :",
-            account_setup_url,
-            "Après 1 heure, utilisez « Mot de passe oublié » sur la page de connexion.",
+            "Un compte Mon Armoire a été créé pour vous afin de suivre vos commandes :",
+            f"Email : {recipient}",
+            f"Mot de passe temporaire : {generated_password}",
+            "Nous vous conseillons de le modifier après votre première connexion (Mon compte > Changer mon mot de passe).",
         ]
 
     lines += [

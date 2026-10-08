@@ -26,3 +26,8 @@ backend/media/
 .DS_Store
 Thumbs.db
 scratch_*
+
+# Fichier .env de production (secrets) : jamais sur GitHub
+backend/.env.production
+backend/.env.*
+!backend/.env.example

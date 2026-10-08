@@ -6,6 +6,10 @@ Options -Indexes
   # HTTPS obligatoire
   RewriteCond %{HTTPS} !=on
   RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+  # Le sous-domaine de l'API (backend.…) est un sous-dossier de ce site : il hérite de ce fichier. On le laisse tranquille,
+  # sinon la règle ci-dessous boucle sur les adresses /api/... (erreur 500 d'Apache).
+  RewriteCond %{HTTP_HOST} ^backend\. [NC]
+  RewriteRule ^ - [L]
   # Application monopage : toute route inconnue renvoie index.html (hors fichiers et dossiers réels)
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d

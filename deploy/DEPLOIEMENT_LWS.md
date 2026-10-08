@@ -211,6 +211,7 @@ Sans secret configuré, le serveur **refuse** les webhooks (réponse 503) : c'es
 | API : « Service temporairement indisponible » (503) | Django n'a pas démarré : lire `mon_armoire/backend/logs/startup_error.log` |
 | « PostgreSQL 14 or later is required » | Django 5.2 installé par erreur : réinstaller `requirements.txt` (Django 5.1.15) |
 | Erreur au démarrage « SECRET_KEY trop faible » | renseigner une clé de 50 caractères minimum dans `.env` |
+| API : erreur 500 « Apache » (page HTML) et verset qui reste sur « Chargement… » | le `.htaccess` du site est hérité par le sous-domaine `backend` : vérifier que `public_html/.htaccess` contient la règle `RewriteCond %{HTTP_HOST} ^backend\.` suivie de `RewriteRule ^ - [L]` (avant la règle `/index.html`) |
 | Page blanche sur `monarmoire.store` | `index.html` absent de `public_html/` |
 | 404 en rechargeant `/catalogue` | `.htaccess` absent de `public_html/` (fichier caché) |
 | Photos cassées | `MEDIA_ROOT`/`MEDIA_URL` du `.env` ; photos présentes dans `public_html/media/` ; lancer `generate_thumbnails` |

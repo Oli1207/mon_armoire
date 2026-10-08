@@ -31,3 +31,6 @@ scratch_*
 backend/.env.production
 backend/.env.*
 !backend/.env.example
+
+# Archives préparées pour l envoi sur le serveur
+deploy_upload/

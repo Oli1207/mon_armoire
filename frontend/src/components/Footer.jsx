@@ -49,7 +49,7 @@ export default function Footer() {
             <ul className="list-unstyled small d-flex flex-column gap-2">
               <li><a href="#histoire">Notre histoire</a></li>
               <li><a href="#avis">Avis clients</a></li>
-              <li>contact@monarmoire.com</li>
+              <li>support@monarmoire.store</li>
             </ul>
           </div>
 

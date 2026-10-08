@@ -54,4 +54,4 @@ MEDIA_URL = env.str('MEDIA_URL', default='https://monarmoire.store/media/')
 # ── Fichiers statiques : servis par WhiteNoise (admin Django) ────────────────
 STATICFILES_DIRS = []
 
-CONTACT_RECIPIENT = 'contact@monarmoire.store'
+CONTACT_RECIPIENT = 'support@monarmoire.store'

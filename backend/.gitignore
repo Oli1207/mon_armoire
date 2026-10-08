@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+.env
+media/
+staticfiles/
+static/
+*.sqlite3
+vapid_private.pem
+logs/
+staticfiles/
+cache/

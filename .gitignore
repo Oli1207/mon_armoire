@@ -1,0 +1,28 @@
+# ── Secrets et clés : JAMAIS dans le dépôt ───────────────────────────────────
+.env
+.env.local
+backend/.env
+backend/vapid_private.pem
+*.pem
+*.key
+
+# ── Générés / locaux ─────────────────────────────────────────────────────────
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+node_modules/
+frontend/dist/
+backend/staticfiles/
+backend/logs/
+backend/cache/
+backend/media/
+*.log
+*.sqlite3
+*.sql.gz
+.claude/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+scratch_*

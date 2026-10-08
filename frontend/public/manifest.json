@@ -1,0 +1,17 @@
+{
+  "name": "Mon Armoire — Bijoux & objets de piété",
+  "short_name": "Mon Armoire",
+  "description": "Bijoux et objets de piété chrétiens à porter et à offrir.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F7F2EA",
+  "theme_color": "#1F3D2E",
+  "lang": "fr",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

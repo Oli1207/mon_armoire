@@ -1,0 +1,664 @@
+:root {
+  --ma-bg:     #F7F2EA;
+  --ma-brown:  #1F3D2E;
+  --ma-brown-dark: #142A20;
+  --ma-brown-rgb: 31, 61, 46;
+  --ma-gold:   #C9A227;
+  --ma-text:   #231710;
+  --ma-cream:  #FDFBF7;
+}
+
+/* ── Rebranding des variables Bootstrap ───────────────────────────────────
+   Bootstrap est importé pré-compilé (bootstrap.min.css) : sans ceci, chaque
+   composant non ré-habillé à la main (cases à cocher, focus, sélecteurs,
+   rayons) reste bleu et arrondi par défaut. On aligne les jetons globaux
+   sur la charte pour qu'aucun élément ne trahisse un thème Bootstrap standard. */
+:root {
+  --bs-primary: var(--ma-brown);
+  --bs-primary-rgb: var(--ma-brown-rgb);
+  --bs-link-color: var(--ma-brown);
+  --bs-link-color-rgb: var(--ma-brown-rgb);
+  --bs-link-hover-color: var(--ma-brown-dark);
+  --bs-focus-ring-color: rgba(var(--ma-brown-rgb), 0.25);
+  --bs-border-radius: 4px;
+  --bs-border-radius-sm: 3px;
+  --bs-border-radius-lg: 4px;
+  --bs-border-radius-xl: 4px;
+  --bs-border-radius-2xl: 4px;
+  --bs-body-font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+body {
+  background-color: var(--ma-bg);
+  color: var(--ma-text);
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+h1, h2, h3, .font-display {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.font-script {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--ma-brown);
+  --bs-btn-border-color: var(--ma-brown);
+  --bs-btn-hover-bg: var(--ma-brown-dark);
+  --bs-btn-hover-border-color: var(--ma-brown-dark);
+  --bs-btn-active-bg: var(--ma-brown-dark);
+  --bs-btn-active-border-color: var(--ma-brown-dark);
+  --bs-btn-disabled-bg: var(--ma-brown);
+  --bs-btn-disabled-border-color: var(--ma-brown);
+  --bs-btn-focus-shadow-rgb: var(--ma-brown-rgb);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--ma-brown);
+  --bs-btn-border-color: var(--ma-brown);
+  --bs-btn-hover-bg: var(--ma-brown);
+  --bs-btn-hover-border-color: var(--ma-brown);
+  --bs-btn-active-bg: var(--ma-brown);
+  --bs-btn-active-border-color: var(--ma-brown);
+  --bs-btn-focus-shadow-rgb: var(--ma-brown-rgb);
+}
+
+/* Contrôles de formulaire : neutralise le liseré et l'ombre bleus par défaut */
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--ma-brown);
+  box-shadow: 0 0 0 0.2rem rgba(var(--ma-brown-rgb), 0.15);
+}
+.form-check-input:checked {
+  background-color: var(--ma-brown);
+  border-color: var(--ma-brown);
+}
+.form-check-input:focus {
+  border-color: var(--ma-brown);
+  box-shadow: 0 0 0 0.2rem rgba(var(--ma-brown-rgb), 0.15);
+}
+
+/* Boutons secondaires (annuler, partager...) : gris Bootstrap par défaut
+   remplacé par un ton neutre de la charte, plutôt qu'un gris générique. */
+.btn-outline-secondary {
+  --bs-btn-color: #7a6f5f;
+  --bs-btn-border-color: #d8cfbe;
+  --bs-btn-hover-color: var(--ma-text);
+  --bs-btn-hover-bg: #ece5d6;
+  --bs-btn-hover-border-color: #d8cfbe;
+  --bs-btn-active-color: var(--ma-text);
+  --bs-btn-active-bg: #e5ddd0;
+  --bs-btn-active-border-color: #d8cfbe;
+  --bs-btn-focus-shadow-rgb: var(--ma-brown-rgb);
+}
+
+a {
+  color: var(--ma-brown);
+}
+
+.text-gold {
+  color: var(--ma-gold);
+}
+
+/* Badges de marque — remplacent les variantes Bootstrap par défaut (jaune vif,
+   gris, noir) qui détonnent avec la palette crème/émeraude/or. */
+.badge-gold {
+  background-color: var(--ma-gold);
+  color: var(--ma-brown-dark);
+}
+.badge-brand {
+  background-color: var(--ma-brown);
+  color: var(--ma-cream);
+}
+.badge-muted {
+  background-color: #e5ddd0;
+  color: var(--ma-text);
+}
+
+.tracking-wide {
+  letter-spacing: 0.15em;
+}
+
+/* Aperçu visuel de la carte cadeau — aplat de couleur, sans dégradé */
+.giftcard-visual {
+  position: relative;
+  aspect-ratio: 1.6 / 1;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 1.75rem;
+  background-color: var(--ma-brown);
+  border: 1px solid var(--ma-gold);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.giftcard-visual-brand {
+  color: var(--ma-cream);
+  font-size: 1.6rem;
+}
+.giftcard-visual-label {
+  color: var(--ma-gold);
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+}
+.giftcard-visual-amount {
+  align-self: flex-end;
+  color: var(--ma-cream);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.6rem;
+}
+
+.navbar-brand {
+  font-family: 'Playfair Display', serif;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--ma-brown) !important;
+}
+
+.navbar-logo {
+  mix-blend-mode: multiply;
+}
+
+/* ── Navigation ───────────────────────────────────────────────────────────── */
+.topbar {
+  background-color: var(--ma-brown);
+  color: var(--ma-cream);
+  letter-spacing: 0.12em;
+  font-size: 0.7rem;
+}
+
+.navbar-main {
+  background-color: var(--ma-bg);
+  border-bottom: 1px solid #e5ddd0;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  color: var(--ma-text);
+  font-size: 1.05rem;
+  padding: 0.25rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;   /* zone tactile minimale : 44 px */
+  min-height: 2.75rem;
+}
+.btn-icon:hover {
+  color: var(--ma-gold);
+}
+
+.nav-link-plain {
+  color: var(--ma-text);
+  text-decoration: none;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+}
+.nav-link-plain:hover {
+  color: var(--ma-gold);
+}
+
+.cart-count {
+  position: absolute;
+  top: -6px;
+  right: -9px;
+  background: var(--ma-brown);
+  color: #fff;
+  font-size: 0.62rem;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.5rem;
+  background: #fff;
+  border: 1px solid #e5ddd0;
+  border-radius: 4px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  z-index: 20;
+}
+.search-suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #f0ebe1;
+  text-align: left;
+}
+.search-suggestion-item:last-child {
+  border-bottom: none;
+}
+.search-suggestion-item:hover {
+  background: var(--ma-bg);
+}
+.search-suggestion-item img,
+.search-suggestion-noimg {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: #eee;
+}
+
+.engraving-preview {
+  position: absolute;
+  left: 50%;
+  bottom: 8%;
+  transform: translateX(-50%);
+  max-width: 82%;
+  padding: 0.4rem 1rem;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(31, 61, 46, 0.25);
+  border-radius: 3px;
+  text-align: center;
+  backdrop-filter: blur(1px);
+}
+.engraving-preview span {
+  display: block;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  font-size: clamp(0.9rem, 2.6vw, 1.3rem);
+  color: var(--ma-brown);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.install-prompt {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  background: var(--ma-brown);
+  color: #fff;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.12);
+}
+.install-prompt .btn-outline-secondary {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.install-prompt .btn-outline-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.discover-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 0.75rem;
+  background: #fff;
+  border: 1px solid #e5ddd0;
+  border-radius: 4px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  padding: 0.5rem 0;
+  min-width: 220px;
+  z-index: 20;
+}
+.discover-dropdown a {
+  display: block;
+  padding: 0.5rem 1.25rem;
+  color: var(--ma-text);
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+.discover-dropdown a:hover {
+  color: var(--ma-gold);
+  background: var(--ma-bg);
+}
+
+.mobile-menu {
+  border-top: 1px solid #e5ddd0;
+  padding: 1rem 0;
+}
+.mobile-menu a {
+  display: block;
+  padding: 0.5rem 0;
+  text-decoration: none;
+  color: var(--ma-text);
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+}
+
+.product-card {
+  border: none;
+  background: #fff;
+}
+.product-card .card-img-top {
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: #eee;
+}
+
+/* ── Page d'accueil ──────────────────────────────────────────────────────── */
+.hero-section {
+  background-color: var(--ma-bg);
+  background-image: var(--hero-bg-image);
+  background-size: cover;
+  background-position: center 30%;
+  position: relative;
+  overflow: hidden;
+}
+.hero-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, var(--ma-bg) 0%, rgba(247, 242, 234, 0.93) 40%, rgba(247, 242, 234, 0.6) 100%);
+}
+.hero-section .container {
+  position: relative;
+  z-index: 1;
+}
+.hero-image {
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  width: 100%;
+  border-radius: 4px;
+}
+
+.story-section {
+  background-color: var(--ma-cream);
+}
+.story-image {
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  width: 100%;
+  border-radius: 4px;
+}
+
+.category-tile img {
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  width: 100%;
+  border-radius: 4px;
+  transition: transform 0.4s ease;
+}
+.category-tile:hover img {
+  transform: scale(1.03);
+}
+.category-tile {
+  text-decoration: none;
+  color: var(--ma-text);
+  display: block;
+}
+
+.coffret-banner {
+  background-color: var(--ma-brown);
+  color: var(--ma-cream);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.coffret-banner img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.verse-banner {
+  background-color: var(--ma-cream);
+  border: 1px solid #e5ddd0;
+  border-radius: 4px;
+}
+
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.review-card {
+  background: #fff;
+  border-radius: 6px;
+  padding: 1.75rem 1.5rem 1.5rem;
+  height: 100%;
+  position: relative;
+  box-shadow: 0 2px 10px rgba(59, 42, 30, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.review-card--arch { border-radius: 70px 70px 6px 6px; }
+.review-card--bubble { border-radius: 26px; }
+.review-card--bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 36px;
+  width: 22px;
+  height: 22px;
+  background: #fff;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+  border-radius: 0 0 0 4px;
+}
+.review-card--cut { clip-path: polygon(0 0, 100% 0, 100% 82%, 82% 100%, 0 100%); }
+
+.review-quote-mark {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2.75rem;
+  line-height: 1;
+  color: var(--ma-gold);
+  opacity: 0.55;
+  height: 2rem;
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.review-avatar {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  background: var(--ma-brown);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-family: 'Playfair Display', serif;
+}
+
+.review-photo-carousel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  aspect-ratio: 4 / 3;
+  margin-top: 0.25rem;
+}
+.review-photo-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.35s ease;
+}
+.review-photo-track img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--ma-brown);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  line-height: 1;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.carousel-arrow-left { left: 6px; }
+.carousel-arrow-right { right: 6px; }
+.carousel-dots {
+  position: absolute;
+  bottom: 8px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+.carousel-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+}
+.carousel-dots span.active {
+  background: #fff;
+}
+
+.trust-badges {
+  border-top: 1px solid #e5ddd0;
+  border-bottom: 1px solid #e5ddd0;
+}
+
+footer.site-footer {
+  background-color: var(--ma-brown);
+  color: #e9dfd0;
+}
+footer.site-footer a {
+  color: #e9dfd0;
+  text-decoration: none;
+}
+footer.site-footer a:hover {
+  color: var(--ma-gold);
+}
+
+
+/* ── Pagination et chargements ─────────────────────────────────────────────── */
+.pager-btn {
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+}
+
+/* Squelette de liste : aplat qui pulse (aucun dégradé) */
+.skeleton-row {
+  height: 3.5rem;
+  margin-bottom: 0.5rem;
+  background-color: #ece5d6;
+  border-radius: 4px;
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-row { animation: none; }
+}
+
+.skeleton-card {
+  aspect-ratio: 1 / 1.35;
+  background-color: #ece5d6;
+  border-radius: 4px;
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-card { animation: none; }
+}
+
+/* ── Mobile : champs lisibles (pas de zoom automatique iOS sous 16 px) et cibles tactiles confortables ── */
+@media (max-width: 767.98px) {
+  .form-control,
+  .form-control-sm,
+  .form-select,
+  .form-select-sm {
+    font-size: 1rem;
+    min-height: 2.75rem;
+  }
+  .btn,
+  .btn-sm {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-link {
+    min-height: 2.75rem;
+  }
+  .form-check-input {
+    width: 1.35em;
+    height: 1.35em;
+  }
+}
+
+/* ── Zones tactiles de 44 px (liens de pied de page, réseaux sociaux, flèches de carrousel, liens texte) ── */
+.navbar-logo {
+  height: 3rem;
+  width: clamp(5.5rem, 30vw, 8.75rem); /* le logo rétrécit sur petit écran pour laisser la place aux icônes */
+  object-fit: cover;
+  object-position: 50% 22%;
+}
+footer.site-footer ul {
+  gap: 0 !important; /* l'espacement vient de la zone tactile des liens (44 px) */
+}
+footer.site-footer ul a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+}
+.footer-social a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+}
+.carousel-arrow::after {
+  content: '';
+  position: absolute;
+  inset: -0.6rem; /* agrandit la zone tactile sans changer l'apparence (26 px -> ~44 px) */
+}
+.link-tap {
+  display: inline-block;
+  padding: 0.75rem 0;
+}
+
+.fav-btn {
+  min-width: 2.75rem;
+  justify-content: center;
+}
+
+/* Bootstrap : un `row g-5` a des marges négatives de 1,5 rem, plus larges que la gouttière du conteneur (0,75 rem)
+   sur mobile -> défilement horizontal parasite. On réduit la gouttière horizontale sous 992 px. */
+@media (max-width: 991.98px) {
+  .g-5,
+  .gx-5 {
+    --bs-gutter-x: 1.5rem;
+  }
+}

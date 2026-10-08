@@ -1,0 +1,14 @@
+# À copier dans public_html/media/.htaccess (dossier public du SITE, servi par Apache) : ce sont des images envoyées par des utilisateurs.
+# Les médias sont des images envoyées par des utilisateurs : on interdit toute exécution et on fige le type.
+Options -ExecCGI -Indexes
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .phps .cgi .pl .py
+RemoveType .php .phtml .php3 .php4 .php5 .php7 .phps
+<FilesMatch "\.(?i:php|phtml|cgi|pl|py|sh|html?|svg|js)$">
+  Require all denied
+</FilesMatch>
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'none'; sandbox"
+  Header set Cache-Control "public, max-age=2592000"
+  Header set Cross-Origin-Resource-Policy "cross-origin"
+</IfModule>

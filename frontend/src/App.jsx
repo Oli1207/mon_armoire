@@ -1,5 +1,5 @@
-import { Suspense, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { Suspense, useEffect, useLayoutEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation, useNavigationType } from 'react-router-dom';
 import 'bootswatch/dist/sketchy/bootstrap.min.css';
 import './index.css';
 
@@ -55,6 +55,22 @@ const AdminOccasionsScreen = lazyWithRetry(() => import('./views/admin/AdminOcca
 const AdminSymbolsScreen = lazyWithRetry(() => import('./views/admin/AdminSymbolsScreen'));
 const AdminLookbookScreen = lazyWithRetry(() => import('./views/admin/AdminLookbookScreen'));
 
+// Nouvelle page = on repart en haut (sinon on arrive en bas si on était en bas de la précédente).
+// Retour/avance du navigateur : on laisse le navigateur rétablir la position. Changer seulement un filtre
+// (?page=, ?category=) ne fait pas remonter la page.
+function ScrollToTop() {
+  const { pathname, hash } = useLocation();
+  const navigationType = useNavigationType();
+  useLayoutEffect(() => {
+    if (navigationType === 'POP') return;
+    let target = null;
+    try { target = hash ? document.getElementById(decodeURIComponent(hash.slice(1))) : null; } catch { /* ancre mal formée */ }
+    if (target) target.scrollIntoView({ behavior: 'instant' });
+    else window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [pathname, hash, navigationType]);
+  return null;
+}
+
 // Une erreur sur une page ne doit pas bloquer les autres : le garde se réinitialise à chaque changement d'adresse.
 function SafeRoutes({ children }) {
   const { pathname } = useLocation();
@@ -75,6 +91,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Navbar />
       <SafeRoutes>
       <Routes>

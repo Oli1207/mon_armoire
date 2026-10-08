@@ -88,14 +88,21 @@ Avant de décider d'un réglage d'hébergement, regarder comment EthniSpirit l'a
   - Clavier mobile : bon `type`/`inputmode`/`autocomplete` sur chaque champ ; le champ actif ne doit pas être masqué par le clavier.
   - Pas d'API navigateur sans repli (clipboard, push, share, etc.) ; tester Safari iOS, Chrome Android, navigateurs Android bas de gamme.
   - Connexions lentes (3G/4G Côte d'Ivoire) : poids minimal, pas de dépendance à de gros assets.
-- **Identité de marque** : crème `#F7F2EA`, émeraude `--ma-brown` `#1F3D2E` (nom hérité, c'est du vert), or `#C9A227`. Playfair Display (titres), Cormorant Garamond italique (script), Inter (texte).
-  - Coins **quasi droits (3–4px)**, **aucun dégradé décoratif** (seul le voile crème de lisibilité sur le hero est toléré), pas d'ombres lourdes, pas de boutons pilule, pas de couleur Bootstrap par défaut (bleu, jaune, gris froid). Aucune apparence de « template généré par IA ».
+- **Identité de marque** : thème **Bootswatch Sketchy** sur tout le site ET l'espace Admin (décision de l'utilisateur ; remplace les anciennes règles « coins droits / Playfair »). Polices Neucha + Cabin Sketch (thème). Couleurs de marque conservées par-dessus : crème `#F7F2EA`, émeraude `--ma-brown` `#1F3D2E` (nom hérité, c'est du vert), or `#C9A227`, danger `#8f2d2d`.
+  - Contours 2px `#333` et rayons « dessinés à la main » via `var(--bs-border-radius[-sm])` (jamais de rayon en dur), **aucun dégradé décoratif**, pas d'ombres lourdes, pas de couleur Bootstrap par défaut (bleu, jaune, gris froid). Le site et l'Admin doivent rester visuellement identiques.
   - Utiliser les classes de marque (`.badge-gold/brand/muted`, `.btn-primary`, `.btn-outline-primary`, `.btn-outline-secondary`, `.text-gold`, `.verse-banner`) ; ne pas utiliser `text-bg-*` de Bootstrap.
   - Bootstrap est importé **précompilé** : surcharger via variables CSS `--bs-*` et sélecteurs dans `index.css` (importé après).
 - **Photo de l'article visible partout** où un article est listé (panier, paiement, commandes, admin).
 - Accessibilité : contraste AA, `alt` utiles, `aria-label` sur boutons-icônes, focus visible, ordre de tabulation logique, formulaires avec `label`, messages d'erreur explicites et à côté du champ.
 - Formulaires : validation côté client **et** serveur, messages en français clair, pas de perte de saisie en cas d'erreur, bouton désactivé pendant l'envoi (anti double-clic).
 - Admin aussi simple que le client : un mot clair par action, confirmation pour toute action destructive, retour visuel après chaque action.
+
+## Espace Admin (la cliente gère tout, hors Django admin)
+
+- Libellé « Admin » partout (jamais « back-office »). Kit : `views/admin/admin.css`, `ui/AdminUi.jsx` (toasts + modale de confirmation, jamais `window.confirm`), `ui/parts.jsx` (`PageHeader`, `Field`, `ImageField`, `StatusBadge`), `ui/AdminCrud.jsx` (CRUD générique). Sauvegarde automatique à la sortie du champ avec toast ; `epoch` ne remonte les champs qu'après une erreur.
+- Toute entité éditable par la cliente (produits, coffrets, catégories, occasions, symboles, lookbook, zones de livraison, versets…) a son écran : ne jamais renvoyer la cliente vers Django admin.
+- Backend : `common/admin_crud.py` (`list_create`, `update_delete`, 409 si `ProtectedError`), `common/uploads.py` (`ValidatedImagesMixin`). `ADMIN_URL` (slug aléatoire, vide = Django admin désactivé). `common/test_admin_api.py` : audit de toutes les routes (aucune route admin sans `IsAdminUser`). `reset_shop_data --yes` vide commandes/clients de test avant le lancement.
+- Les URL d'une SPA ne se cachent pas : la sécurité repose sur l'autorisation serveur testée, pas sur l'obscurité.
 
 ## Sécurité (strict, à vérifier à chaque fonctionnalité)
 

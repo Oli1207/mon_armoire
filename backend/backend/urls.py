@@ -17,7 +17,6 @@ handler404 = api_not_found
 handler500 = api_server_error
 
 urlpatterns = [
-    path(settings.ADMIN_URL, admin.site.urls),
     path('api/auth/', include('userauths.urls')),
     path('api/', include('catalog.urls')),
     path('api/', include('coffrets.urls')),
@@ -26,3 +25,8 @@ urlpatterns = [
     path('api/', include('notifications.urls')),
     path('api/', include('dashboard.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# L'administration Django n'est montée que si ADMIN_URL est renseignée : l'espace Admin du site suffit à la cliente,
+# et une porte de moins est une surface d'attaque de moins (laisser ADMIN_URL vide en production une fois la mise en route finie).
+if settings.ADMIN_URL:
+    urlpatterns.insert(0, path(settings.ADMIN_URL, admin.site.urls))

@@ -24,6 +24,8 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class ReviewCreateSerializer(serializers.ModelSerializer):
+    comment = serializers.CharField(max_length=1500, allow_blank=True, required=False, trim_whitespace=True)
+
     class Meta:
         model  = Review
         fields = ('rating', 'comment')

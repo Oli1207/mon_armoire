@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.core.cache import cache
 from django.test import override_settings
 from rest_framework.test import APITestCase
 
@@ -12,6 +13,7 @@ from userauths.models import User
 
 class Base(APITestCase):
     def setUp(self):
+        cache.clear()  # les limites de débit ne doivent pas fuir d'un test à l'autre
         self.category = Category.objects.create(name='Chaînes')
         self.product = Product.objects.create(name='Chaîne test', category=self.category)
         self.variant = ProductVariant.objects.create(product=self.product, price=Decimal('10000'), stock=1, is_default=True)

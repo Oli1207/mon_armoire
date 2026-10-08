@@ -2,7 +2,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from django.db.models import CharField, OuterRef, Subquery, Value
+from django.db.models import Avg, CharField, Count, OuterRef, Subquery, Value
 from django.db.models.functions import Coalesce, NullIf
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
@@ -10,6 +10,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from common.http import public_cache
+from reviews.models import Review
 from common.pagination import paginate
 from common.throttles import SignupThrottle
 from .models import Category, Collection, LookbookEntry, Product, ProductImage, ProductVariant, SymbolGuideEntry, WaitlistEntry
@@ -58,7 +59,14 @@ def collections_list(request):
 @permission_classes([AllowAny])
 @public_cache(60)
 def products_list(request):
-    qs = Product.objects.filter(is_active=True).select_related('category').prefetch_related('variants', 'images')
+    approved = Review.objects.filter(product=OuterRef('pk'), is_approved=True).order_by().values('product')
+    qs = (
+        Product.objects.filter(is_active=True).select_related('category').prefetch_related('variants', 'images')
+        .annotate(
+            rating_average=Subquery(approved.annotate(a=Avg('rating')).values('a')),
+            rating_count=Coalesce(Subquery(approved.annotate(c=Count('id')).values('c')), 0),
+        )
+    )
 
     category   = request.query_params.get('category')
     collection = request.query_params.get('collection')

@@ -108,7 +108,7 @@ export default function Navbar() {
 
           <div className="d-flex align-items-center gap-0 gap-md-3">
             {user?.is_staff && (
-              <Link to="/admin" className="nav-link-plain text-gold d-none d-md-inline">Back-office</Link>
+              <Link to="/admin" className="nav-link-plain text-gold d-none d-md-inline">Admin</Link>
             )}
             <button className="btn-icon" onClick={() => setSearchOpen((v) => !v)} aria-label="Rechercher">
               <FaSearch />
@@ -173,7 +173,7 @@ export default function Navbar() {
             <Link to="/cadeau" onClick={() => setMenuOpen(false)}>Je cherche un cadeau</Link>
             <Link to="/cartes-cadeaux" onClick={() => setMenuOpen(false)}>Cartes cadeaux</Link>
             <Link to="/suivi" onClick={() => setMenuOpen(false)}>Suivre ma commande</Link>
-            {user?.is_staff && <Link to="/admin" onClick={() => setMenuOpen(false)}>Back-office</Link>}
+            {user?.is_staff && <Link to="/admin" onClick={() => setMenuOpen(false)}>Admin</Link>}
 
             <div className="mt-3">
               {isAuthenticated ? (

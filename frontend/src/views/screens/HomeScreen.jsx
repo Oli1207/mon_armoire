@@ -1,4 +1,5 @@
 import QueuedImage from '../../components/QueuedImage';
+import { StarRating } from '../../components/Stars';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { categoriesAPI, coffretsAPI, notificationsAPI, reviewsAPI } from '../../utils/api';
@@ -222,7 +223,7 @@ export default function HomeScreen() {
                   <div className="review-avatar">{t.user_name.charAt(0).toUpperCase()}</div>
                   <div>
                     <p className="fw-semibold mb-0">{t.user_name}</p>
-                    <p className="text-gold small mb-0">{'★'.repeat(t.rating)}{'☆'.repeat(5 - t.rating)}</p>
+                    <StarRating value={t.rating} size="1rem" />
                   </div>
                 </div>
                 <p className="review-quote-mark mb-0">”</p>

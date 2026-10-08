@@ -5,6 +5,7 @@ import { FaHeart, FaRegHeart } from 'react-icons/fa';
 import { productsAPI, categoriesAPI, favoritesAPI, collectionsAPI } from '../../utils/api';
 import useAuthStore from '../../store/auth';
 import { useLoadMore } from '../../utils/usePaginated';
+import { StarRating } from '../../components/Stars';
 
 export default function CatalogueScreen() {
   const { isAuthenticated } = useAuthStore();
@@ -138,6 +139,12 @@ export default function CatalogueScreen() {
                         {favoriteIds.has(p.id) ? <FaHeart color="#C9A227" /> : <FaRegHeart />}
                       </button>
                     </div>
+                    {p.rating_count > 0 && (
+                      <div className="d-flex align-items-center gap-1 mb-1" title={`${p.rating_average} sur 5 (${p.rating_count} avis)`}>
+                        <StarRating value={p.rating_average} size="0.9rem" />
+                        <span className="small text-muted">({p.rating_count})</span>
+                      </div>
+                    )}
                     <p className="mb-0 fw-semibold text-gold">
                       {p.price ? `${Number(p.price).toLocaleString('fr-FR')} FCFA` : '—'}
                     </p>

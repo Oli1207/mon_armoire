@@ -1,4 +1,5 @@
 from django.db import IntegrityError, transaction
+from django.db.models import Avg, Count
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import Throttled
@@ -15,6 +16,17 @@ from .serializers import ReviewSerializer, ReviewCreateSerializer
 
 class ReviewPagination(StandardPagination):
     page_size = 10
+
+
+def review_summary(approved_reviews):
+    """Moyenne, nombre d'avis et répartition par nombre d'étoiles (pour l'en-tête de la section avis)."""
+    totals = approved_reviews.aggregate(average=Avg('rating'), count=Count('id'))
+    by_rating = dict(approved_reviews.order_by().values_list('rating').annotate(n=Count('id')))
+    return {
+        'average': round(float(totals['average']), 1) if totals['average'] else 0,
+        'count': totals['count'],
+        'distribution': {str(stars): by_rating.get(stars, 0) for stars in (5, 4, 3, 2, 1)},
+    }
 
 
 def _throttle_review_posts(view):
@@ -39,8 +51,11 @@ def product_reviews(request, slug):
         return Response({'error': 'Produit introuvable.'}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET':
-        qs = Review.objects.filter(product=product, is_approved=True).select_related('user').prefetch_related('images')
-        return paginate(request, qs, ReviewSerializer, pagination=ReviewPagination)
+        approved = Review.objects.filter(product=product, is_approved=True)
+        qs = approved.select_related('user').prefetch_related('images')
+        response = paginate(request, qs, ReviewSerializer, pagination=ReviewPagination)
+        response.data['summary'] = review_summary(approved)
+        return response
 
     if not request.user.is_authenticated:
         return Response({'error': 'Connectez-vous pour laisser un avis.'}, status=status.HTTP_401_UNAUTHORIZED)

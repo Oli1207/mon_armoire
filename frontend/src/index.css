@@ -20,28 +20,20 @@
   --bs-link-color-rgb: var(--ma-brown-rgb);
   --bs-link-hover-color: var(--ma-brown-dark);
   --bs-focus-ring-color: rgba(var(--ma-brown-rgb), 0.25);
-  --bs-border-radius: 4px;
-  --bs-border-radius-sm: 3px;
-  --bs-border-radius-lg: 4px;
-  --bs-border-radius-xl: 4px;
-  --bs-border-radius-2xl: 4px;
-  --bs-body-font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
 }
 
 body {
   background-color: var(--ma-bg);
   color: var(--ma-text);
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
 }
 
-h1, h2, h3, .font-display {
-  font-family: 'Playfair Display', Georgia, serif;
+.font-display {
+  font-family: 'Cabin Sketch', cursive;
 }
 
 .font-script {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-style: italic;
-  font-weight: 500;
+  font-family: var(--bs-font-sans-serif);
+  font-weight: 400;
 }
 
 .btn-primary {
@@ -119,7 +111,7 @@ a {
 }
 
 .tracking-wide {
-  letter-spacing: 0.15em;
+  letter-spacing: 0.06em; /* police manuscrite : un interlettrage large la déformerait */
 }
 
 /* Aperçu visuel de la carte cadeau — aplat de couleur, sans dégradé */
@@ -131,8 +123,8 @@ a {
   margin: 0 auto;
   padding: 1.75rem;
   background-color: var(--ma-brown);
-  border: 1px solid var(--ma-gold);
-  border-radius: 4px;
+  border: 2px solid var(--ma-gold);
+  border-radius: var(--bs-border-radius);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -150,14 +142,14 @@ a {
 .giftcard-visual-amount {
   align-self: flex-end;
   color: var(--ma-cream);
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Cabin Sketch', cursive;
   font-size: 1.6rem;
 }
 
 .navbar-brand {
-  font-family: 'Playfair Display', serif;
-  font-weight: 600;
-  letter-spacing: 0.05em;
+  font-family: 'Cabin Sketch', cursive;
+  font-weight: 400;
+  letter-spacing: 0.02em;
   color: var(--ma-brown) !important;
 }
 
@@ -175,7 +167,7 @@ a {
 
 .navbar-main {
   background-color: var(--ma-bg);
-  border-bottom: 1px solid #e5ddd0;
+  border-bottom: 2px solid #333;
 }
 
 .btn-icon {
@@ -228,9 +220,8 @@ a {
   right: 0;
   margin-top: 0.5rem;
   background: #fff;
-  border: 1px solid #e5ddd0;
-  border-radius: 4px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  border: 2px solid #333;
+  border-radius: var(--bs-border-radius-sm);
   overflow: hidden;
   z-index: 20;
 }
@@ -276,9 +267,8 @@ a {
 }
 .engraving-preview span {
   display: block;
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-style: italic;
-  font-weight: 600;
+  font-family: var(--bs-font-sans-serif);
+  font-weight: 700;
   letter-spacing: 0.04em;
   font-size: clamp(0.9rem, 2.6vw, 1.3rem);
   color: var(--ma-brown);
@@ -311,9 +301,8 @@ a {
   left: 0;
   margin-top: 0.75rem;
   background: #fff;
-  border: 1px solid #e5ddd0;
-  border-radius: 4px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  border: 2px solid #333;
+  border-radius: var(--bs-border-radius-sm);
   padding: 0.5rem 0;
   min-width: 220px;
   z-index: 20;
@@ -345,7 +334,6 @@ a {
 }
 
 .product-card {
-  border: none;
   background: #fff;
 }
 .product-card .card-img-top {
@@ -377,7 +365,7 @@ a {
   aspect-ratio: 4 / 5;
   object-fit: cover;
   width: 100%;
-  border-radius: 4px;
+  border-radius: var(--bs-border-radius);
 }
 
 .story-section {
@@ -387,14 +375,14 @@ a {
   aspect-ratio: 1 / 1;
   object-fit: cover;
   width: 100%;
-  border-radius: 4px;
+  border-radius: var(--bs-border-radius);
 }
 
 .category-tile img {
   aspect-ratio: 1 / 1;
   object-fit: cover;
   width: 100%;
-  border-radius: 4px;
+  border-radius: var(--bs-border-radius);
   transition: transform 0.4s ease;
 }
 .category-tile:hover img {
@@ -409,7 +397,8 @@ a {
 .coffret-banner {
   background-color: var(--ma-brown);
   color: var(--ma-cream);
-  border-radius: 4px;
+  border: 2px solid #333;
+  border-radius: var(--bs-border-radius);
   overflow: hidden;
 }
 .coffret-banner img {
@@ -420,8 +409,8 @@ a {
 
 .verse-banner {
   background-color: var(--ma-cream);
-  border: 1px solid #e5ddd0;
-  border-radius: 4px;
+  border: 2px solid #333;
+  border-radius: var(--bs-border-radius);
 }
 
 .testimonials-grid {
@@ -433,17 +422,17 @@ a {
 
 .review-card {
   background: #fff;
-  border-radius: 6px;
+  border: 2px solid #333;
+  border-radius: var(--bs-border-radius);
   padding: 1.75rem 1.5rem 1.5rem;
   height: 100%;
   position: relative;
-  box-shadow: 0 2px 10px rgba(59, 42, 30, 0.06);
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
 }
-.review-card--arch { border-radius: 70px 70px 6px 6px; }
-.review-card--bubble { border-radius: 26px; }
+.review-card--arch { border-radius: 70px 70px 15px 15px; }
+.review-card--bubble { border-radius: var(--bs-border-radius); }
 .review-card--bubble::after {
   content: '';
   position: absolute;
@@ -458,7 +447,7 @@ a {
 .review-card--cut { clip-path: polygon(0 0, 100% 0, 100% 82%, 82% 100%, 0 100%); }
 
 .review-quote-mark {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Cabin Sketch', cursive;
   font-size: 2.75rem;
   line-height: 1;
   color: var(--ma-gold);
@@ -482,14 +471,15 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-family: 'Playfair Display', serif;
+  font-weight: 400;
+  font-family: 'Cabin Sketch', cursive;
+  border: 2px solid #333;
 }
 
 .review-photo-carousel {
   position: relative;
   overflow: hidden;
-  border-radius: 4px;
+  border-radius: var(--bs-border-radius-sm);
   aspect-ratio: 4 / 3;
   margin-top: 0.25rem;
 }
@@ -543,8 +533,8 @@ a {
 }
 
 .trust-badges {
-  border-top: 1px solid #e5ddd0;
-  border-bottom: 1px solid #e5ddd0;
+  border-top: 2px solid #333;
+  border-bottom: 2px solid #333;
 }
 
 footer.site-footer {
@@ -662,3 +652,168 @@ footer.site-footer ul a {
     --bs-gutter-x: 1.5rem;
   }
 }
+
+/* ── Couleurs d'alerte et de statut alignées sur la charte (plus de vert/rouge/jaune Bootstrap par défaut) ── */
+:root {
+  --ma-danger: #8f2d2d;
+}
+.text-danger { color: var(--ma-danger) !important; }
+.text-success { color: var(--ma-brown) !important; }
+.bg-light { background-color: var(--ma-cream) !important; }
+
+.btn-success {
+  --bs-btn-bg: var(--ma-brown);
+  --bs-btn-border-color: var(--ma-brown);
+  --bs-btn-hover-bg: var(--ma-brown-dark);
+  --bs-btn-hover-border-color: var(--ma-brown-dark);
+  --bs-btn-active-bg: var(--ma-brown-dark);
+  --bs-btn-active-border-color: var(--ma-brown-dark);
+  --bs-btn-focus-shadow-rgb: var(--ma-brown-rgb);
+}
+.btn-danger,
+.btn-outline-danger {
+  --bs-btn-color: var(--ma-danger);
+  --bs-btn-border-color: var(--ma-danger);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: var(--ma-danger);
+  --bs-btn-hover-border-color: var(--ma-danger);
+  --bs-btn-active-bg: var(--ma-danger);
+  --bs-btn-active-border-color: var(--ma-danger);
+  --bs-btn-focus-shadow-rgb: 143, 45, 45;
+}
+.btn-danger { --bs-btn-color: #fff; --bs-btn-bg: var(--ma-danger); }
+
+.alert {
+  border-radius: var(--bs-border-radius-sm);
+  border-width: 2px 2px 2px 6px;
+  font-size: 0.95rem;
+}
+.alert-danger  { color: #5e1f1f; background: #f7ecea; border-color: #e6cfcb #e6cfcb #e6cfcb var(--ma-danger); }
+.alert-success { color: var(--ma-brown-dark); background: #e9f0ec; border-color: #cfdcd4 #cfdcd4 #cfdcd4 var(--ma-brown); }
+.alert-warning { color: #5d4a0c; background: #f8f1da; border-color: #ecdfae #ecdfae #ecdfae var(--ma-gold); }
+
+
+/* ── Avis : étoiles, résumé, cartes, formulaire, photos ───────────────────── */
+.star-btn {
+  background: none;
+  border: 0;
+  padding: 0.35rem 0.25rem;
+  line-height: 1;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.star-btn:hover { transform: scale(1.12) rotate(-4deg); }
+.star-btn:focus-visible { outline: 2px dashed #333; outline-offset: 2px; border-radius: 8px; }
+.star-label { font-size: 1.05rem; color: var(--ma-brown); min-height: 1.6rem; }
+
+.review-summary {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr;
+  align-items: center;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  background: #fff;
+  border: 2px solid #333;
+  border-radius: var(--bs-border-radius);
+}
+@media (min-width: 576px) { .review-summary { grid-template-columns: 11rem 1fr; } }
+.review-summary-score { text-align: center; }
+.review-score-number { font-family: 'Cabin Sketch', cursive; font-size: 3.6rem; line-height: 1; color: var(--ma-brown); }
+.rating-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem; }
+.rating-row-label { width: 2.2rem; flex-shrink: 0; font-size: 0.95rem; }
+.rating-row-count { width: 1.8rem; text-align: right; flex-shrink: 0; font-size: 0.95rem; }
+.rating-bar {
+  flex: 1 1 auto;
+  height: 0.85rem;
+  border: 2px solid #333;
+  border-radius: 10px;
+  background: var(--ma-cream);
+  overflow: hidden;
+}
+.rating-bar-fill { display: block; height: 100%; background: var(--ma-gold); }
+
+.review-list { display: grid; gap: 1rem; }
+.review-item {
+  padding: 1.25rem;
+  background: #fff;
+  border: 2px solid #333;
+  border-radius: var(--bs-border-radius-sm);
+}
+.review-photos { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.9rem; }
+.review-photo {
+  width: 5rem; height: 5rem; padding: 0; overflow: hidden; cursor: zoom-in;
+  background: var(--ma-bg); border: 2px solid #333; border-radius: 12px;
+}
+.review-photo img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.2s ease; }
+.review-photo:hover img { transform: scale(1.08); }
+
+.review-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  background: var(--ma-cream);
+  border: 2px dashed #333;
+  border-radius: var(--bs-border-radius);
+}
+.review-form-card {
+  padding: 1.5rem;
+  background: var(--ma-cream);
+  border: 2px solid #333;
+  border-radius: var(--bs-border-radius);
+}
+.review-previews { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 0.75rem; }
+.review-preview { position: relative; width: 4.5rem; height: 4.5rem; }
+.review-preview img { width: 100%; height: 100%; object-fit: cover; border: 2px solid #333; border-radius: 12px; }
+.review-preview button {
+  position: absolute; top: -0.5rem; right: -0.5rem; width: 1.75rem; height: 1.75rem; padding: 0;
+  display: flex; align-items: center; justify-content: center; line-height: 1;
+  background: #fff; color: var(--ma-danger); border: 2px solid #333; border-radius: 50%;
+}
+
+.lightbox {
+  position: fixed; inset: 0; z-index: 1100;
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem; background: rgba(33, 33, 33, 0.88);
+}
+.lightbox img { max-width: 100%; max-height: 88vh; border: 3px solid #fff; border-radius: 12px; background: #fff; }
+.lightbox-close, .lightbox-nav {
+  position: absolute; display: flex; align-items: center; justify-content: center;
+  width: 2.75rem; height: 2.75rem; padding: 0; font-size: 1.8rem; line-height: 1;
+  background: #fff; color: #333; border: 2px solid #333; border-radius: 50%;
+}
+.lightbox-close { top: 1rem; right: 1rem; }
+.lightbox-prev { left: 1rem; top: 50%; transform: translateY(-50%); }
+.lightbox-next { right: 1rem; top: 50%; transform: translateY(-50%); }
+
+/* Photos produit */
+.product-photo { border: 2px solid #333; border-radius: var(--bs-border-radius); background: #fff; }
+.product-thumb {
+  width: 4.5rem; height: 4.5rem; padding: 0; overflow: hidden; flex-shrink: 0; cursor: pointer;
+  background: #fff; border: 2px solid #333; border-radius: 14px; opacity: 0.8;
+}
+.product-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.product-thumb.is-active { opacity: 1; border-color: var(--ma-gold); box-shadow: 0 0 0 2px var(--ma-gold); }
+
+/* Libellé de champ et zone d'envoi de fichier (formulaires du site) */
+.field-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.95rem;
+  color: #5d5346;
+}
+.file-drop {
+  display: block;
+  padding: 1rem;
+  text-align: center;
+  border: 2px dashed #333;
+  border-radius: var(--bs-border-radius-sm);
+  background: #fff;
+  cursor: pointer;
+}
+.file-drop:hover, .file-drop:focus-within { border-color: var(--ma-brown); color: var(--ma-brown); }
+.file-drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }

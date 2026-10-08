@@ -4,6 +4,7 @@ import { adminAPI } from '../../utils/api';
 import usePaginated, { useDebounced } from '../../utils/usePaginated';
 import Pager from '../../components/Pager';
 import ListStatus from '../../components/ListStatus';
+import { PageHeader, fcfa, shortDate } from './ui/parts';
 
 export default function AdminCustomersScreen() {
   const [search, setSearch] = useState('');
@@ -14,53 +15,33 @@ export default function AdminCustomersScreen() {
 
   return (
     <div>
-      <h1 className="h4 mb-3">Clients ({count})</h1>
+      <PageHeader title="Clients" lead={`${count} cliente${count > 1 ? 's' : ''} inscrite${count > 1 ? 's' : ''}. Cliquez sur « Voir » pour ses commandes, son panier et ses favoris.`} />
 
-      <input
-        type="search"
-        className="form-control mb-3"
-        style={{ maxWidth: '24rem' }}
-        placeholder="Chercher par nom, e-mail ou téléphone"
-        aria-label="Chercher un client"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+      <div className="admin-toolbar">
+        <input
+          type="search" className="form-control admin-search" placeholder="Chercher par nom, e-mail ou téléphone"
+          aria-label="Chercher une cliente" value={search} onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
 
-      <ListStatus loading={loading} error={error} onRetry={reload} isEmpty={customers.length === 0} emptyText="Aucun client trouvé." />
+      <ListStatus loading={loading} error={error} onRetry={reload} isEmpty={customers.length === 0} emptyText="Aucune cliente trouvée." />
 
       {customers.length > 0 && (
-        <div className="table-responsive">
-          <table className="table table-sm align-middle bg-white">
+        <div className="admin-table-wrap">
+          <table className="admin-table">
             <thead>
-              <tr>
-                <th>Client</th>
-                <th>Commandes</th>
-                <th>Total dépensé</th>
-                <th>Panier actuel</th>
-                <th>Favoris</th>
-                <th>Inscrit le</th>
-                <th></th>
-              </tr>
+              <tr><th>Cliente</th><th>Commandes</th><th>Total dépensé</th><th>Panier actuel</th><th>Favoris</th><th>Inscrite le</th><th aria-label="Voir" /></tr>
             </thead>
             <tbody>
               {customers.map((c) => (
                 <tr key={c.id}>
-                  <td>
-                    <div>{c.full_name || '—'}</div>
-                    <div className="text-muted small">{c.email}</div>
-                  </td>
+                  <td><strong>{c.full_name || '—'}</strong><div className="cell-muted">{c.email}</div></td>
                   <td>{c.orders_count}</td>
-                  <td>{Number(c.total_spent).toLocaleString('fr-FR')} FCFA</td>
-                  <td>
-                    {c.cart_items_count > 0
-                      ? `${c.cart_items_count} article(s) — ${Number(c.cart_total).toLocaleString('fr-FR')} FCFA`
-                      : '—'}
-                  </td>
+                  <td>{fcfa(c.total_spent)}</td>
+                  <td>{c.cart_items_count > 0 ? `${c.cart_items_count} article(s) — ${fcfa(c.cart_total)}` : '—'}</td>
                   <td>{c.favorites_count}</td>
-                  <td className="text-muted small">{new Date(c.date_joined).toLocaleDateString('fr-FR')}</td>
-                  <td>
-                    <Link className="btn btn-sm btn-link" to={`/admin/clients/${c.id}`}>Voir</Link>
-                  </td>
+                  <td className="cell-muted">{shortDate(c.date_joined)}</td>
+                  <td className="cell-actions"><Link className="admin-link" to={`/admin/clients/${c.id}`}>Voir</Link></td>
                 </tr>
               ))}
             </tbody>

@@ -1,158 +1,128 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { adminAPI } from '../../utils/api';
+import ListStatus from '../../components/ListStatus';
+import { PageHeader, StatusBadge, errorText, fcfa } from './ui/parts';
 
-const STATUS_LABELS = {
-  pending: 'En attente',
-  paid: 'Payée',
-  processing: 'En préparation',
-  shipped: 'Expédiée',
-  delivered: 'Livrée',
-  cancelled: 'Annulée',
-};
+function Tile({ label, value, note, alert, to }) {
+  const body = (
+    <>
+      <div className="stat-label">{label}</div>
+      <div className="stat-value">{value}</div>
+      {note && <div className="stat-note">{note}</div>}
+    </>
+  );
+  return to
+    ? <Link to={to} className={`stat-tile d-block text-decoration-none ${alert ? 'is-alert' : ''}`}>{body}</Link>
+    : <div className={`stat-tile ${alert ? 'is-alert' : ''}`}>{body}</div>;
+}
 
 export default function AdminDashboardScreen() {
   const [stats, setStats] = useState(null);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    adminAPI.stats().then(({ data }) => setStats(data));
+  const load = useCallback(() => {
+    setError('');
+    adminAPI.stats().then(({ data }) => setStats(data)).catch((err) => setError(errorText(err, 'Impossible de charger les chiffres.')));
   }, []);
+  useEffect(() => { load(); }, [load]);
 
-  if (!stats) return <p>Chargement...</p>;
+  if (!stats) {
+    return (
+      <div>
+        <PageHeader title="Vue d'ensemble" lead="Un coup d'œil sur la boutique." />
+        <ListStatus loading={!error} error={error} onRetry={load} isEmpty rows={4} />
+      </div>
+    );
+  }
 
   const maxTrend = Math.max(1, ...stats.revenue_trend.map((d) => Number(d.total)));
+  const toPrepare = stats.orders_by_status.find((s) => s.status === 'paid')?.count || 0;
 
   return (
     <div>
-      <h1 className="h4 mb-4">Vue d'ensemble</h1>
+      <PageHeader title="Vue d'ensemble" lead="Un coup d'œil sur la boutique : ventes, commandes à traiter, produits à surveiller." />
+
+      {toPrepare > 0 && (
+        <Link to="/admin/commandes?status=paid" className="stat-tile is-alert d-block text-decoration-none mb-3">
+          <div className="stat-label">À faire</div>
+          <div className="stat-value">{toPrepare} commande{toPrepare > 1 ? 's' : ''} payée{toPrepare > 1 ? 's' : ''} à préparer →</div>
+        </Link>
+      )}
+
+      <div className="row g-3 mb-3">
+        <div className="col-6 col-lg-3"><Tile label="Chiffre d'affaires" value={fcfa(stats.revenue_total)} /></div>
+        <div className="col-6 col-lg-3"><Tile label="Commandes" value={stats.orders_count} /></div>
+        <div className="col-6 col-lg-3"><Tile label="Clients" value={stats.customers_count} /></div>
+        <div className="col-6 col-lg-3"><Tile label="Produits en vente" value={stats.products_count} /></div>
+      </div>
       <div className="row g-3 mb-4">
-        <div className="col-6 col-md-3">
-          <div className="card p-3">
-            <div className="text-muted small">Chiffre d'affaires</div>
-            <div className="fs-4 fw-semibold">{Number(stats.revenue_total).toLocaleString('fr-FR')} FCFA</div>
-          </div>
-        </div>
-        <div className="col-6 col-md-3">
-          <div className="card p-3">
-            <div className="text-muted small">Commandes</div>
-            <div className="fs-4 fw-semibold">{stats.orders_count}</div>
-          </div>
-        </div>
-        <div className="col-6 col-md-3">
-          <div className="card p-3">
-            <div className="text-muted small">Clients</div>
-            <div className="fs-4 fw-semibold">{stats.customers_count}</div>
-          </div>
-        </div>
-        <div className="col-6 col-md-3">
-          <div className="card p-3">
-            <div className="text-muted small">Produits actifs</div>
-            <div className="fs-4 fw-semibold">{stats.products_count}</div>
-          </div>
+        <div className="col-6 col-lg-3"><Tile label="Panier moyen" value={fcfa(stats.average_order_value)} /></div>
+        <div className="col-6 col-lg-3"><Tile label="Nouveaux clients (30 j)" value={stats.new_customers_30d} /></div>
+        <div className="col-6 col-lg-3"><Tile label="Cartes cadeaux à honorer" value={fcfa(stats.gift_cards_outstanding)} /></div>
+        <div className="col-6 col-lg-3">
+          <Tile label="Points de fidélité dus" value={fcfa(stats.loyalty_liability_amount)} note={`${stats.loyalty_points_outstanding} pts en circulation`} />
         </div>
       </div>
 
-      <div className="row g-3 mb-4">
-        <div className="col-6 col-md-3">
-          <div className="card p-3">
-            <div className="text-muted small">Panier moyen</div>
-            <div className="fs-5 fw-semibold">{Number(stats.average_order_value).toLocaleString('fr-FR')} FCFA</div>
-          </div>
-        </div>
-        <div className="col-6 col-md-3">
-          <div className="card p-3">
-            <div className="text-muted small">Nouveaux clients (30j)</div>
-            <div className="fs-5 fw-semibold">{stats.new_customers_30d}</div>
-          </div>
-        </div>
-        <div className="col-6 col-md-3">
-          <div className="card p-3">
-            <div className="text-muted small">Cartes cadeaux (solde dû)</div>
-            <div className="fs-5 fw-semibold">{Number(stats.gift_cards_outstanding).toLocaleString('fr-FR')} FCFA</div>
-          </div>
-        </div>
-        <div className="col-6 col-md-3">
-          <div className="card p-3">
-            <div className="text-muted small">Points fidélité (valeur due)</div>
-            <div className="fs-5 fw-semibold">{Number(stats.loyalty_liability_amount).toLocaleString('fr-FR')} FCFA</div>
-            <div className="text-muted small">{stats.loyalty_points_outstanding} pts en circulation</div>
-          </div>
-        </div>
-      </div>
-
-      <div className="card p-3 mb-4">
-        <h6>Chiffre d'affaires — 14 derniers jours</h6>
-        <div className="d-flex align-items-end gap-1" style={{ height: 120 }}>
+      <section className="admin-card">
+        <h2 className="admin-card-title">Chiffre d'affaires — 14 derniers jours</h2>
+        <div className="admin-bars" role="img" aria-label="Histogramme du chiffre d'affaires des 14 derniers jours">
           {stats.revenue_trend.map((d) => (
-            <div key={d.date} className="flex-grow-1 d-flex flex-column align-items-center justify-content-end h-100" title={`${d.date} — ${Number(d.total).toLocaleString('fr-FR')} FCFA (${d.orders} commande(s))`}>
-              <div
-                style={{
-                  width: '100%',
-                  minHeight: 2,
-                  height: `${(Number(d.total) / maxTrend) * 100}%`,
-                  backgroundColor: 'var(--ma-gold)',
-                  borderRadius: '2px 2px 0 0',
-                }}
-              />
-              <span className="text-muted mt-1" style={{ fontSize: '0.6rem' }}>
-                {new Date(d.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
-              </span>
+            <div key={d.date} className="admin-bar-col" title={`${d.date} — ${fcfa(d.total)} (${d.orders} commande(s))`}>
+              <div className="admin-bar" style={{ height: `${(Number(d.total) / maxTrend) * 100}%` }} />
+              <span className="admin-bar-label">{new Date(d.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}</span>
             </div>
           ))}
         </div>
-      </div>
-
-      <div className="row g-3 mb-4">
-        <div className="col-md-6">
-          <div className="card p-3">
-            <h6>Meilleures ventes (30 derniers jours)</h6>
-            {stats.top_products.length === 0 && <p className="text-muted small">Pas encore de vente.</p>}
-            {stats.top_products.map((p, i) => (
-              <div className="d-flex justify-content-between border-bottom py-1" key={i}>
-                <span>{p.name} <span className="text-muted small">× {p.quantity}</span></span>
-                <span className="fw-semibold text-gold">{Number(p.revenue).toLocaleString('fr-FR')} FCFA</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="col-md-6">
-          <div className="card p-3">
-            <h6>Signaux à surveiller</h6>
-            <div className="d-flex justify-content-between border-bottom py-1">
-              <span>Variantes en rupture de stock</span>
-              <span className="fw-semibold text-danger">{stats.out_of_stock_count}</span>
-            </div>
-            <div className="d-flex justify-content-between py-1">
-              <span>Clients en liste d'attente (non notifiés)</span>
-              <span className="fw-semibold">{stats.waitlist_pending}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      </section>
 
       <div className="row g-3">
-        <div className="col-md-6">
-          <div className="card p-3">
-            <h6>Commandes par statut</h6>
-            {stats.orders_by_status.length === 0 && <p className="text-muted small">Aucune commande.</p>}
-            {stats.orders_by_status.map((s) => (
-              <div className="d-flex justify-content-between border-bottom py-1" key={s.status}>
-                <span>{STATUS_LABELS[s.status] || s.status}</span>
-                <span className="fw-semibold">{s.count}</span>
+        <div className="col-lg-6">
+          <section className="admin-card h-100">
+            <h2 className="admin-card-title">Meilleures ventes (30 jours)</h2>
+            {stats.top_products.length === 0 && <p className="admin-help">Pas encore de vente.</p>}
+            {stats.top_products.map((p) => (
+              <div className="admin-row-line" key={p.name}>
+                <span>{p.name} <span className="cell-muted">× {p.quantity}</span></span>
+                <strong className="text-gold">{fcfa(p.revenue)}</strong>
               </div>
             ))}
-          </div>
+          </section>
         </div>
-        <div className="col-md-6">
-          <div className="card p-3">
-            <h6>Stock faible ({stats.out_of_stock_count} en rupture)</h6>
-            {stats.low_stock.length === 0 && <p className="text-muted small">Rien à signaler.</p>}
-            {stats.low_stock.map((item, i) => (
-              <div className="d-flex justify-content-between border-bottom py-1" key={i}>
-                <span>{item.product} — {item.variant}</span>
-                <span className="fw-semibold text-danger">{item.stock}</span>
+        <div className="col-lg-6">
+          <section className="admin-card h-100">
+            <h2 className="admin-card-title">À surveiller</h2>
+            <div className="admin-row-line">
+              <span>Variantes en rupture de stock</span>
+              <strong className={stats.out_of_stock_count ? 'text-danger' : ''}>{stats.out_of_stock_count}</strong>
+            </div>
+            <div className="admin-row-line">
+              <Link to="/admin/liste-attente">Personnes en liste d'attente</Link>
+              <strong>{stats.waitlist_pending}</strong>
+            </div>
+            {stats.low_stock.length > 0 && <p className="admin-label mt-3">Stock faible</p>}
+            {stats.low_stock.map((item) => (
+              <div className="admin-row-line" key={`${item.product}-${item.variant}`}>
+                <span>{item.product} <span className="cell-muted">— {item.variant}</span></span>
+                <strong className="text-danger">{item.stock}</strong>
               </div>
             ))}
-          </div>
+          </section>
+        </div>
+        <div className="col-12">
+          <section className="admin-card">
+            <h2 className="admin-card-title">Commandes par statut</h2>
+            {stats.orders_by_status.length === 0 && <p className="admin-help">Aucune commande.</p>}
+            <div className="d-flex flex-wrap gap-3">
+              {stats.orders_by_status.map((s) => (
+                <div key={s.status} className="d-flex align-items-center gap-2">
+                  <StatusBadge status={s.status} />
+                  <strong>{s.count}</strong>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       </div>
     </div>

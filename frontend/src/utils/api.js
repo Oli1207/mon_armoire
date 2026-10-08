@@ -116,7 +116,7 @@ export const notificationsAPI = {
   clearOverride: (date)       => axiosInstance.delete(`/api/notifications/verses/week/${date}/`),
 };
 
-// ── Back-office ───────────────────────────────────────────────────────────────
+// ── Espace admin ───────────────────────────────────────────────────────────────
 export const adminAPI = {
   stats:          ()             => axiosInstance.get('/api/admin/stats/'),
   customers:      (params = {})  => axiosInstance.get('/api/admin/customers/', { params }),
@@ -183,6 +183,28 @@ export const adminAPI = {
   createLookbookEntry: (data)    => axiosInstance.post('/api/admin/lookbook/', data),
   updateLookbookEntry: (id, data) => axiosInstance.patch(`/api/admin/lookbook/${id}/`, data),
   deleteLookbookEntry: (id)      => axiosInstance.delete(`/api/admin/lookbook/${id}/`),
+
+  // Occasions / collections
+  collections:      ()           => axiosInstance.get('/api/admin/collections/'),
+  createCollection: (data)       => axiosInstance.post('/api/admin/collections/', data),
+  updateCollection: (id, data)   => axiosInstance.patch(`/api/admin/collections/${id}/`, data),
+  deleteCollection: (id)         => axiosInstance.delete(`/api/admin/collections/${id}/`),
+
+  // Zones de livraison
+  zones:            ()           => axiosInstance.get('/api/admin/delivery-zones/'),
+  createZone:       (data)       => axiosInstance.post('/api/admin/delivery-zones/', data),
+  updateZone:       (id, data)   => axiosInstance.patch(`/api/admin/delivery-zones/${id}/`, data),
+  deleteZone:       (id)         => axiosInstance.delete(`/api/admin/delivery-zones/${id}/`),
+
+  // Bibliothèque de versets
+  verseLibrary:     (params = {}) => axiosInstance.get('/api/notifications/verses/library/', { params }),
+  createVerse:      (data)       => axiosInstance.post('/api/notifications/verses/library/', data),
+  updateVerse:      (id, data)   => axiosInstance.patch(`/api/notifications/verses/library/${id}/`, data),
+  deleteVerse:      (id)         => axiosInstance.delete(`/api/notifications/verses/library/${id}/`),
+
+  // Listes compactes pour les menus de choix
+  productOptions:   ()           => axiosInstance.get('/api/admin/product-options/'),
+  setMainImage:     (id)         => axiosInstance.patch(`/api/admin/images/${id}/`, { is_main: true }),
 
   // Cartes cadeaux
   giftcards:        (params = {}) => axiosInstance.get('/api/admin/giftcards/', { params }),

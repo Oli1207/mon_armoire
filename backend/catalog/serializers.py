@@ -49,11 +49,13 @@ class ProductListSerializer(serializers.ModelSerializer):
     is_in_stock        = serializers.ReadOnlyField()
     category           = CategorySerializer(read_only=True)
     default_variant_id = serializers.SerializerMethodField()
+    rating_average     = serializers.SerializerMethodField()
+    rating_count       = serializers.SerializerMethodField()
 
     class Meta:
         model  = Product
         fields = ('id', 'name', 'slug', 'category', 'is_new', 'price', 'main_image', 'is_in_stock',
-                  'is_personalizable', 'default_variant_id')
+                  'is_personalizable', 'default_variant_id', 'rating_average', 'rating_count')
 
     def get_default_variant_id(self, obj):
         variant = obj.default_variant
@@ -61,6 +63,14 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     def get_main_image(self, obj):
         return obj.main_thumbnail
+
+    # Renseignés par l'annotation de la liste du catalogue ; absents (None / 0) ailleurs (favoris, suggestions…)
+    def get_rating_average(self, obj):
+        value = getattr(obj, 'rating_average', None)
+        return round(float(value), 1) if value else None
+
+    def get_rating_count(self, obj):
+        return getattr(obj, 'rating_count', 0) or 0
 
 
 # ── Détail (fiche complète) ───────────────────────────────────────────────────

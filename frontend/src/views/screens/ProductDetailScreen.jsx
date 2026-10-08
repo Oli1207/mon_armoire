@@ -5,6 +5,8 @@ import { productsAPI, favoritesAPI, reviewsAPI, waitlistAPI } from '../../utils/
 import useAuthStore from '../../store/auth';
 import useCartStore from '../../store/cart';
 import { useLoadMore } from '../../utils/usePaginated';
+import ProductReviews from '../../components/ProductReviews';
+import { StarRating } from '../../components/Stars';
 
 export default function ProductDetailScreen() {
   const { slug } = useParams();
@@ -24,11 +26,6 @@ export default function ProductDetailScreen() {
   const [waitlistDone, setWaitlistDone] = useState(false);
   const [waitlistError, setWaitlistError] = useState('');
   const [joiningWaitlist, setJoiningWaitlist] = useState(false);
-
-  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
-  const [reviewImages, setReviewImages] = useState([]);
-  const [reviewError, setReviewError] = useState('');
-  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     productsAPI.detail(slug)
@@ -71,26 +68,6 @@ export default function ProductDetailScreen() {
     setIsFavorite((v) => !v);
   };
 
-  const handleSubmitReview = async (e) => {
-    e.preventDefault();
-    setReviewError('');
-    setSubmittingReview(true);
-    try {
-      const formData = new FormData();
-      formData.append('rating', reviewForm.rating);
-      formData.append('comment', reviewForm.comment);
-      reviewImages.forEach((file) => formData.append('images', file));
-      await reviewsAPI.create(product.slug, formData);
-      reviews.reload();
-      setReviewForm({ rating: 5, comment: '' });
-      setReviewImages([]);
-    } catch (err) {
-      setReviewError(err.response?.data?.error || "Erreur lors de l'envoi de votre avis.");
-    } finally {
-      setSubmittingReview(false);
-    }
-  };
-
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const shareText = product ? `${product.name} sur Mon Armoire` : '';
 
@@ -117,8 +94,8 @@ export default function ProductDetailScreen() {
               <img
                 src={activeImage || variant?.image || product.images[0]?.image}
                 alt={product.name}
-                className="img-fluid shadow-sm"
-                style={{ aspectRatio: '1/1', objectFit: 'cover', width: '100%', borderRadius: 4 }}
+                className="img-fluid product-photo"
+                style={{ aspectRatio: '1/1', objectFit: 'cover', width: '100%' }}
               />
               {product.is_personalizable && engravingText.trim() && (
                 <div className="engraving-preview">
@@ -127,7 +104,7 @@ export default function ProductDetailScreen() {
               )}
             </div>
           ) : (
-            <div className="bg-white d-flex align-items-center justify-content-center text-muted" style={{ aspectRatio: '1/1', borderRadius: 4 }}>
+            <div className="bg-white d-flex align-items-center justify-content-center text-muted" style={{ aspectRatio: '1/1' }}>
               Pas d'image
             </div>
           )}
@@ -140,24 +117,12 @@ export default function ProductDetailScreen() {
                   <button
                     key={img.id}
                     type="button"
-                    className="p-0 border-0 bg-transparent"
+                    className={`product-thumb ${isActive ? 'is-active' : ''}`}
                     onClick={() => setActiveImage(img.image)}
-                    style={{
-                      width: 64,
-                      height: 64,
-                      borderRadius: 4,
-                      overflow: 'hidden',
-                      outline: isActive ? '2px solid var(--ma-gold)' : '1px solid #e5ddd0',
-                      outlineOffset: -1,
-                      flexShrink: 0,
-                      cursor: 'pointer',
-                    }}
+                    aria-label="Voir cette photo"
+                    aria-pressed={isActive}
                   >
-                    <img
-                      src={img.image}
-                      alt=""
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                    />
+                    <img src={img.image} alt="" />
                   </button>
                 );
               })}
@@ -171,6 +136,13 @@ export default function ProductDetailScreen() {
               {isFavorite ? <FaHeart color="#C9A227" size={22} /> : <FaRegHeart size={22} />}
             </button>
           </div>
+
+          {reviews.summary?.count > 0 && (
+            <a href="#avis" className="d-inline-flex align-items-center gap-2 mb-2 text-decoration-none">
+              <StarRating value={reviews.summary.average} size="1.1rem" />
+              <span className="small">{String(reviews.summary.average).replace('.', ',')} ({reviews.summary.count} avis)</span>
+            </a>
+          )}
 
           {variant && (
             <p className="fs-4 fw-semibold text-gold mb-3">
@@ -310,93 +282,7 @@ export default function ProductDetailScreen() {
         </div>
       </div>
 
-      <div className="row mt-5 pt-4" style={{ borderTop: '1px solid #e5ddd0' }}>
-        <div className="col-md-8">
-          <h2 className="h4 mb-3">Avis clients ({reviews.count})</h2>
-
-          {reviews.error && <p className="text-danger small">{reviews.error}</p>}
-          {!reviews.loading && !reviews.error && reviews.items.length === 0 && <p className="text-muted">Aucun avis pour le moment.</p>}
-          {reviews.items.map((r) => (
-            <div key={r.id} className="border-bottom py-3">
-              <strong>{r.user_name}</strong>{' '}
-              <span className="text-gold">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</span>
-              <p className="mb-2">{r.comment}</p>
-              {r.images.length > 0 && (
-                <div className="d-flex gap-2" style={{ overflowX: 'auto', scrollSnapType: 'x mandatory' }}>
-                  {r.images.map((img) => (
-                    <img
-                      key={img.id}
-                      src={img.image}
-                      alt="Photo client"
-                      style={{ width: 90, height: 90, objectFit: 'cover', borderRadius: 4, flexShrink: 0, scrollSnapAlign: 'start' }}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-
-          {reviews.hasMore && (
-            <div className="text-center my-3">
-              <button type="button" className="btn btn-outline-primary pager-btn px-4" disabled={reviews.loadingMore} onClick={reviews.loadMore}>
-                {reviews.loadingMore ? 'Chargement...' : 'Voir plus d\'avis'}
-              </button>
-            </div>
-          )}
-
-          {isAuthenticated ? (
-            <form onSubmit={handleSubmitReview} className="mt-3">
-              <div className="mb-2">
-                <label className="form-label d-block">Votre note</label>
-                <select
-                  className="form-select form-select-sm"
-                  style={{ width: 120 }}
-                  value={reviewForm.rating}
-                  onChange={(e) => setReviewForm({ ...reviewForm, rating: Number(e.target.value) })}
-                >
-                  {[5, 4, 3, 2, 1].map((n) => (
-                    <option key={n} value={n}>{n} / 5</option>
-                  ))}
-                </select>
-              </div>
-              <textarea
-                className="form-control mb-2"
-                placeholder="Votre avis"
-                value={reviewForm.comment}
-                onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-              />
-              <div className="mb-2">
-                <label className="form-label d-block small text-muted">Ajouter des photos (facultatif, 6 max)</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="form-control form-control-sm"
-                  onChange={(e) => setReviewImages(Array.from(e.target.files).slice(0, 6))}
-                />
-                {reviewImages.length > 0 && (
-                  <div className="d-flex gap-2 mt-2 flex-wrap">
-                    {reviewImages.map((file, i) => (
-                      <img
-                        key={i}
-                        src={URL.createObjectURL(file)}
-                        alt=""
-                        style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 4 }}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-              {reviewError && <div className="alert alert-danger">{reviewError}</div>}
-              <button className="btn btn-sm btn-primary" disabled={submittingReview}>
-                {submittingReview ? 'Envoi...' : 'Publier mon avis'}
-              </button>
-            </form>
-          ) : (
-            <p className="text-muted small mt-3">Connecte-toi pour laisser un avis.</p>
-          )}
-        </div>
-      </div>
+      <ProductReviews product={product} reviews={reviews} />
     </div>
   );
 }

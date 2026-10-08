@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 from . import payment_views
 from . import giftcard_views
+from . import admin_views
 
 urlpatterns = [
     path('cart/',                          views.cart_detail,      name='cart_detail'),
@@ -26,5 +27,7 @@ urlpatterns = [
 
     path('giftcards/purchase/', giftcard_views.giftcard_purchase, name='giftcard_purchase'),
     path('giftcards/check/',    giftcard_views.giftcard_check,    name='giftcard_check'),
+    path('admin/delivery-zones/',            admin_views.admin_zones,       name='admin_zones'),
+    path('admin/delivery-zones/<uuid:pk>/',  admin_views.admin_zone_detail, name='admin_zone_detail'),
     path('admin/giftcards/',    giftcard_views.admin_giftcards_list, name='admin_giftcards_list'),
 ]

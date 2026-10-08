@@ -6,26 +6,7 @@ from rest_framework.response import Response
 from .models import Coffret, CoffretItem, CoffretSlot
 from .admin_serializers import CoffretAdminSerializer, CoffretItemAdminSerializer, CoffretSlotAdminSerializer
 
-
-def _list_create(request, queryset, serializer_class):
-    if request.method == 'GET':
-        return Response(serializer_class(queryset, many=True).data)
-    serializer = serializer_class(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-def _update_delete(request, instance, serializer_class):
-    if request.method == 'PATCH':
-        serializer = serializer_class(instance, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    instance.delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)
+from common.admin_crud import list_create as _list_create, update_delete as _update_delete
 
 
 @api_view(['GET', 'POST'])

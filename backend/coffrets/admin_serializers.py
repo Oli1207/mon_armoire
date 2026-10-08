@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from common.uploads import ValidatedImagesMixin
+
 from catalog.models import ProductVariant
 from catalog.serializers import ProductVariantSerializer
 from .models import Coffret, CoffretItem, CoffretSlot
@@ -23,7 +25,7 @@ class CoffretItemAdminSerializer(serializers.ModelSerializer):
         extra_kwargs = {'coffret': {'required': False}}
 
 
-class CoffretAdminSerializer(serializers.ModelSerializer):
+class CoffretAdminSerializer(ValidatedImagesMixin, serializers.ModelSerializer):
     slots          = CoffretSlotAdminSerializer(many=True, read_only=True)
     included_items = CoffretItemAdminSerializer(many=True, read_only=True)
     starting_price = serializers.ReadOnlyField()

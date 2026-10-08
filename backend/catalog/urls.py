@@ -28,6 +28,7 @@ urlpatterns = [
     path('admin/symbols/<uuid:pk>/',    admin_views.admin_symbol_detail,     name='admin_symbol_detail'),
     path('admin/lookbook/',             admin_views.admin_lookbook,          name='admin_lookbook'),
     path('admin/lookbook/<uuid:pk>/',   admin_views.admin_lookbook_detail,   name='admin_lookbook_detail'),
+    path('admin/product-options/',      admin_views.admin_product_options,   name='admin_product_options'),
     path('admin/variant-options/',      admin_views.admin_variant_options,   name='admin_variant_options'),
     path('admin/waitlist/',             admin_views.admin_waitlist,          name='admin_waitlist'),
 ]

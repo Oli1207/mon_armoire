@@ -48,7 +48,7 @@ export default function usePaginated(fetcher, params = {}, pageSize = 20) {
 /** Liste « Voir plus » (catalogue, commandes du compte, avis) : les pages suivantes s'ajoutent à la suite. */
 export function useLoadMore(fetcher, params = {}, enabled = true) {
   const key = JSON.stringify(params);
-  const [state, setState] = useState({ items: [], count: 0, page: 1, hasMore: false, loading: true, loadingMore: false, error: '' });
+  const [state, setState] = useState({ items: [], count: 0, summary: null, page: 1, hasMore: false, loading: true, loadingMore: false, error: '' });
   const latest = useRef(0);
 
   const load = useCallback((page) => {
@@ -60,6 +60,7 @@ export function useLoadMore(fetcher, params = {}, enabled = true) {
         setState((s) => ({
           items: page === 1 ? data.results : [...s.items, ...data.results],
           count: data.count,
+          summary: data.summary ?? s.summary,
           page,
           hasMore: Boolean(data.next),
           loading: false,

@@ -3,12 +3,13 @@ import { adminAPI } from '../../utils/api';
 import usePaginated, { useDebounced } from '../../utils/usePaginated';
 import Pager from '../../components/Pager';
 import ListStatus from '../../components/ListStatus';
+import { PageHeader, StatusBadge, fcfa } from './ui/parts';
 
-const STATUS_LABELS = {
-  pending: 'En attente de paiement',
-  active: 'Active',
-  used: 'Épuisée',
-  cancelled: 'Annulée',
+const STATUS = {
+  pending: { label: 'En attente de paiement', tone: 'pending' },
+  active: { label: 'Active', tone: 'on' },
+  used: { label: 'Épuisée', tone: 'off' },
+  cancelled: { label: 'Annulée', tone: 'cancelled' },
 };
 
 export default function AdminGiftCardsScreen() {
@@ -20,44 +21,33 @@ export default function AdminGiftCardsScreen() {
 
   return (
     <div>
-      <h1 className="h4 mb-3">Cartes cadeaux ({count})</h1>
+      <PageHeader title="Cartes cadeaux" lead={`${count} carte${count > 1 ? 's' : ''}. Le code est envoyé par e-mail dès que l'achat est payé ; le solde baisse à chaque utilisation.`} />
 
-      <input
-        type="search"
-        className="form-control mb-3"
-        style={{ maxWidth: '24rem' }}
-        placeholder="Chercher par code ou e-mail"
-        aria-label="Chercher une carte cadeau"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+      <div className="admin-toolbar">
+        <input
+          type="search" className="form-control admin-search" placeholder="Chercher par code ou e-mail"
+          aria-label="Chercher une carte cadeau" value={search} onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
 
       <ListStatus loading={loading} error={error} onRetry={reload} isEmpty={cards.length === 0} emptyText="Aucune carte cadeau trouvée." />
 
       {cards.length > 0 && (
-        <div className="table-responsive">
-          <table className="table table-sm align-middle bg-white">
+        <div className="admin-table-wrap">
+          <table className="admin-table">
             <thead>
-              <tr>
-                <th>Code</th>
-                <th>Commande</th>
-                <th>Valeur</th>
-                <th>Solde</th>
-                <th>Acheteur</th>
-                <th>Destinataire</th>
-                <th>Statut</th>
-              </tr>
+              <tr><th>Code</th><th>Commande</th><th>Valeur</th><th>Solde</th><th>Acheteuse</th><th>Destinataire</th><th>Statut</th></tr>
             </thead>
             <tbody>
               {cards.map((c) => (
                 <tr key={c.id}>
-                  <td className="small fw-semibold">{c.code}</td>
-                  <td className="small">{c.order_number}</td>
-                  <td>{Number(c.initial_value).toLocaleString('fr-FR')} FCFA</td>
-                  <td className="fw-semibold text-gold">{Number(c.balance).toLocaleString('fr-FR')} FCFA</td>
-                  <td className="small">{c.purchaser_name || c.purchaser_email}</td>
-                  <td className="small">{c.recipient_name || c.recipient_email || '—'}</td>
-                  <td className="small">{STATUS_LABELS[c.status] || c.status}</td>
+                  <td><strong>{c.code}</strong></td>
+                  <td className="cell-muted">{c.order_number}</td>
+                  <td>{fcfa(c.initial_value)}</td>
+                  <td><strong className="text-gold">{fcfa(c.balance)}</strong></td>
+                  <td>{c.purchaser_name || c.purchaser_email}</td>
+                  <td>{c.recipient_name || c.recipient_email || '—'}</td>
+                  <td><StatusBadge status={STATUS[c.status]?.tone || 'off'} label={STATUS[c.status]?.label || c.status} /></td>
                 </tr>
               ))}
             </tbody>

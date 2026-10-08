@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.db.models import Q
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -12,26 +13,7 @@ from .admin_serializers import (
     SymbolGuideAdminSerializer, LookbookEntryAdminSerializer, WaitlistEntryAdminSerializer,
 )
 
-
-def _list_create(request, queryset, serializer_class):
-    if request.method == 'GET':
-        return Response(serializer_class(queryset, many=True).data)
-    serializer = serializer_class(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-def _update_delete(request, instance, serializer_class):
-    if request.method == 'PATCH':
-        serializer = serializer_class(instance, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    instance.delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)
+from common.admin_crud import list_create as _list_create, update_delete as _update_delete
 
 
 # ── Catégories ────────────────────────────────────────────────────────────────
@@ -79,6 +61,13 @@ def admin_products(request):
             qs = qs.filter(Q(name__icontains=search) | Q(category__name__icontains=search))
         return paginate(request, qs, ProductAdminSerializer, pagination=AdminPagination)
     return _list_create(request, qs, ProductAdminSerializer)
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def admin_product_options(request):
+    """Liste compacte (id + nom) de tous les produits pour les menus de choix (lookbook)."""
+    return Response(list(Product.objects.order_by('name').values('id', 'name')[:2000]))
 
 
 @api_view(['GET'])
@@ -146,13 +135,21 @@ def admin_image_create(request, product_id):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['DELETE'])
+@api_view(['PATCH', 'DELETE'])
 @permission_classes([IsAdminUser])
 def admin_image_delete(request, pk):
     try:
         obj = ProductImage.objects.get(pk=pk)
     except (ProductImage.DoesNotExist, ValueError):
         return Response({'error': 'Image introuvable.'}, status=status.HTTP_404_NOT_FOUND)
+    if request.method == 'PATCH':
+        # Une seule photo principale par produit
+        with transaction.atomic():
+            if request.data.get('is_main') in (True, 'true', 'True', '1', 1):
+                ProductImage.objects.filter(product=obj.product).exclude(pk=obj.pk).update(is_main=False)
+                obj.is_main = True
+                obj.save(update_fields=['is_main'])
+        return Response(ProductImageAdminSerializer(obj, context={'request': request}).data)
     obj.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 

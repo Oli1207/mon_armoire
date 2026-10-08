@@ -1,6 +1,6 @@
 import { Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootswatch/dist/sketchy/bootstrap.min.css';
 import './index.css';
 
 import useAuthStore from './store/auth';
@@ -36,7 +36,7 @@ const ForgotPasswordScreen = lazyWithRetry(() => import('./views/auth/ForgotPass
 const ResetPasswordScreen = lazyWithRetry(() => import('./views/auth/ResetPasswordScreen'));
 
 import AdminRoute from './layout/AdminRoute';
-import AdminLayout from './layout/AdminLayout';
+const AdminLayout = lazyWithRetry(() => import('./layout/AdminLayout'));
 const AdminDashboardScreen = lazyWithRetry(() => import('./views/admin/AdminDashboardScreen'));
 const AdminOrdersScreen = lazyWithRetry(() => import('./views/admin/AdminOrdersScreen'));
 const AdminCustomersScreen = lazyWithRetry(() => import('./views/admin/AdminCustomersScreen'));
@@ -49,6 +49,11 @@ const AdminCoffretDetailScreen = lazyWithRetry(() => import('./views/admin/Admin
 const AdminReviewsScreen = lazyWithRetry(() => import('./views/admin/AdminReviewsScreen'));
 const AdminGiftCardsScreen = lazyWithRetry(() => import('./views/admin/AdminGiftCardsScreen'));
 const AdminWaitlistScreen = lazyWithRetry(() => import('./views/admin/AdminWaitlistScreen'));
+const AdminZonesScreen = lazyWithRetry(() => import('./views/admin/AdminZonesScreen'));
+const AdminCategoriesScreen = lazyWithRetry(() => import('./views/admin/AdminCategoriesScreen'));
+const AdminOccasionsScreen = lazyWithRetry(() => import('./views/admin/AdminOccasionsScreen'));
+const AdminSymbolsScreen = lazyWithRetry(() => import('./views/admin/AdminSymbolsScreen'));
+const AdminLookbookScreen = lazyWithRetry(() => import('./views/admin/AdminLookbookScreen'));
 
 // Une erreur sur une page ne doit pas bloquer les autres : le garde se réinitialise à chaque changement d'adresse.
 function SafeRoutes({ children }) {
@@ -109,6 +114,11 @@ function App() {
             <Route path="/admin/avis" element={<AdminReviewsScreen />} />
             <Route path="/admin/cartes-cadeaux" element={<AdminGiftCardsScreen />} />
             <Route path="/admin/liste-attente" element={<AdminWaitlistScreen />} />
+            <Route path="/admin/livraison" element={<AdminZonesScreen />} />
+            <Route path="/admin/categories" element={<AdminCategoriesScreen />} />
+            <Route path="/admin/occasions" element={<AdminOccasionsScreen />} />
+            <Route path="/admin/symboles" element={<AdminSymbolsScreen />} />
+            <Route path="/admin/lookbook" element={<AdminLookbookScreen />} />
           </Route>
         </Route>
       </Routes>

@@ -494,3 +494,54 @@ a.admin-link { display: inline-flex; align-items: center; }
   .admin-table td a:not(.admin-link) { display: inline-flex; align-items: center; min-height: 2.75rem; }
   .admin-row-line a { display: inline-flex; align-items: center; min-height: 2.75rem; }
 }
+
+.admin-filter { flex: 0 1 13rem; }
+
+/* Entonnoir (visiteur → commande) */
+.admin-funnel-row { margin-bottom: 0.9rem; }
+.admin-funnel-track { height: 0.7rem; margin-top: 0.25rem; background: var(--ma-bg); border: 1px solid #333; border-radius: var(--bs-border-radius-sm); overflow: hidden; }
+.admin-funnel-fill { height: 100%; background: var(--ma-brown); min-width: 2px; }
+
+/* ── Éditeur de zone de gravure ──────────────────────────────────────────── */
+.engrave-steps { padding-left: 1.2rem; }
+.engrave-modes { display: grid; gap: 0.75rem; grid-template-columns: 1fr; margin-bottom: 1.25rem; }
+@media (min-width: 768px) { .engrave-modes { grid-template-columns: repeat(3, 1fr); } }
+.engrave-mode {
+  display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-start; text-align: left;
+  padding: 0.85rem 1rem; background: #fff; color: var(--ma-text);
+  border: 2px solid #333; border-radius: var(--bs-border-radius-sm);
+}
+.engrave-mode span { font-size: 0.85rem; color: #5d5346; }
+.engrave-mode.is-active { background: var(--ma-cream); border-color: var(--ma-brown); box-shadow: 0 0 0 3px var(--ma-gold); }
+.engrave-layout { display: grid; gap: 1.5rem; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 992px) { .engrave-layout { grid-template-columns: minmax(0, 32rem) minmax(0, 1fr); } }
+.engrave-frame {
+  position: relative; width: 100%; max-width: 32rem; aspect-ratio: 1 / 1; overflow: hidden;
+  background: #eee; border: 2px solid #333; border-radius: var(--bs-border-radius-sm); touch-action: none; user-select: none;
+}
+.engrave-frame > img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.engrave-noimage { display: grid; place-items: center; height: 100%; color: #7a6f5f; }
+.engrave-frame .engraving-overlay, .engrave-guides { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.engrave-handle {
+  position: absolute; transform: translate(-50%, -50%); width: 2.75rem; height: 2.75rem; padding: 0;
+  display: grid; place-items: center; border-radius: 50%; touch-action: none; cursor: grab;
+  background: rgba(201, 162, 39, 0.9); color: #231710; border: 2px solid #231710; font-weight: 700; font-size: 1rem;
+}
+.engrave-handle.is-size { background: rgba(255, 255, 255, 0.92); }
+.engrave-handle:active { cursor: grabbing; }
+.engrave-swatch { flex: 0 0 auto; width: 2rem; height: 2rem; border: 2px solid #333; border-radius: 50%; }
+
+/* Encadré d'aide repliable */
+.admin-guide summary { cursor: pointer; font-weight: 600; min-height: 2.75rem; display: flex; align-items: center; }
+.admin-guide ul { padding-left: 1.2rem; margin-top: 0.5rem; }
+.admin-guide li { margin-bottom: 0.45rem; }
+.engrave-controls .d-flex .form-select { flex: 1 1 auto; min-width: 7rem; }
+
+/* Bandeau des alertes de l'équipe */
+.admin-alerts {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem;
+  margin-bottom: 1.25rem; padding: 0.85rem 1rem;
+  background: #fff; border: 2px solid #333; border-left: 6px solid var(--ma-gold); border-radius: var(--bs-border-radius-sm);
+  font-size: 0.95rem;
+}
+.admin-alerts.is-on { border-left-color: var(--ma-brown); }

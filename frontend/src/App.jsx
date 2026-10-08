@@ -15,6 +15,9 @@ import InstallPrompt from './components/InstallPrompt';
 import PrivateRoute from './layout/PrivateRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import BackBar from './components/BackBar';
+import { AdminHome, Need } from './layout/AdminGuards';
+import { setStaff, track } from './utils/tracker';
+import useSiteStore from './store/site';
 import PageSkeleton from './components/PageSkeleton';
 import lazyWithRetry from './utils/lazyWithRetry';
 
@@ -59,6 +62,13 @@ const AdminCategoriesScreen = lazyWithRetry(() => import('./views/admin/AdminCat
 const AdminOccasionsScreen = lazyWithRetry(() => import('./views/admin/AdminOccasionsScreen'));
 const AdminSymbolsScreen = lazyWithRetry(() => import('./views/admin/AdminSymbolsScreen'));
 const AdminLookbookScreen = lazyWithRetry(() => import('./views/admin/AdminLookbookScreen'));
+const AdminVisitorsScreen = lazyWithRetry(() => import('./views/admin/AdminVisitorsScreen'));
+const AdminSiteScreen = lazyWithRetry(() => import('./views/admin/AdminSiteScreen'));
+const InstallScreen = lazyWithRetry(() => import('./views/screens/InstallScreen'));
+const LegalScreen = lazyWithRetry(() => import('./views/screens/LegalScreen'));
+const AdminHelpScreen = lazyWithRetry(() => import('./views/admin/AdminHelpScreen'));
+const AdminTeamScreen = lazyWithRetry(() => import('./views/admin/AdminTeamScreen'));
+const AdminJournalScreen = lazyWithRetry(() => import('./views/admin/AdminJournalScreen'));
 
 const PRELOAD = [
   () => import('./views/screens/CatalogueScreen'),
@@ -85,6 +95,15 @@ function ScrollToTop() {
   return null;
 }
 
+// Compte une page vue à chaque changement d'adresse ; le personnel de la boutique n'est jamais compté.
+function PageTracking() {
+  const { pathname } = useLocation();
+  const { user } = useAuthStore();
+  useEffect(() => { track('pageview'); }, [pathname]);
+  useEffect(() => { if (user?.is_staff) setStaff(true); }, [user?.is_staff]);
+  return null;
+}
+
 // Une erreur sur une page ne doit pas bloquer les autres : le garde se réinitialise à chaque changement d'adresse.
 function SafeRoutes({ children }) {
   const { pathname } = useLocation();
@@ -97,10 +116,12 @@ function SafeRoutes({ children }) {
 
 function App() {
   const { init, fetchMe } = useAuthStore();
+  const { fetchSite } = useSiteStore();
 
   useEffect(() => {
     init();
     fetchMe();
+    fetchSite();
   }, []);
 
   // Une fois l'accueil affiché, on télécharge en arrière-plan les pages les plus visitées : le clic suivant est instantané.
@@ -116,6 +137,7 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <PageTracking />
       <Navbar />
       <BackBar />
       <SafeRoutes>
@@ -139,28 +161,36 @@ function App() {
         <Route path="/quiz" element={<QuizScreen />} />
         <Route path="/cadeau" element={<GiftFinderScreen />} />
         <Route path="/cartes-cadeaux" element={<GiftCardsScreen />} />
+        <Route path="/installer" element={<InstallScreen />} />
+        <Route path="/conditions-generales" element={<LegalScreen page="terms" />} />
+        <Route path="/confidentialite" element={<LegalScreen page="privacy" />} />
         <Route element={<PrivateRoute />}>
           <Route path="/compte" element={<AccountScreen />} />
         </Route>
         <Route element={<AdminRoute />}>
           <Route element={<AdminLayout />}>
-            <Route path="/admin" element={<AdminDashboardScreen />} />
-            <Route path="/admin/commandes" element={<AdminOrdersScreen />} />
-            <Route path="/admin/clients" element={<AdminCustomersScreen />} />
-            <Route path="/admin/clients/:id" element={<AdminCustomerDetailScreen />} />
-            <Route path="/admin/versets" element={<AdminVersesScreen />} />
-            <Route path="/admin/produits" element={<AdminProductsScreen />} />
-            <Route path="/admin/produits/:id" element={<AdminProductDetailScreen />} />
-            <Route path="/admin/coffrets" element={<AdminCoffretsScreen />} />
-            <Route path="/admin/coffrets/:id" element={<AdminCoffretDetailScreen />} />
-            <Route path="/admin/avis" element={<AdminReviewsScreen />} />
-            <Route path="/admin/cartes-cadeaux" element={<AdminGiftCardsScreen />} />
-            <Route path="/admin/liste-attente" element={<AdminWaitlistScreen />} />
-            <Route path="/admin/livraison" element={<AdminZonesScreen />} />
-            <Route path="/admin/categories" element={<AdminCategoriesScreen />} />
-            <Route path="/admin/occasions" element={<AdminOccasionsScreen />} />
-            <Route path="/admin/symboles" element={<AdminSymbolsScreen />} />
-            <Route path="/admin/lookbook" element={<AdminLookbookScreen />} />
+            <Route path="/admin" element={<AdminHome overview={<AdminDashboardScreen />} />} />
+            <Route path="/admin/commandes" element={<Need perms={['orders']}><AdminOrdersScreen /></Need>} />
+            <Route path="/admin/clients" element={<Need perms={['customers']}><AdminCustomersScreen /></Need>} />
+            <Route path="/admin/clients/:id" element={<Need perms={['customers']}><AdminCustomerDetailScreen /></Need>} />
+            <Route path="/admin/versets" element={<Need perms={['settings']}><AdminVersesScreen /></Need>} />
+            <Route path="/admin/produits" element={<Need perms={['catalog']}><AdminProductsScreen /></Need>} />
+            <Route path="/admin/produits/:id" element={<Need perms={['catalog']}><AdminProductDetailScreen /></Need>} />
+            <Route path="/admin/coffrets" element={<Need perms={['catalog']}><AdminCoffretsScreen /></Need>} />
+            <Route path="/admin/coffrets/:id" element={<Need perms={['catalog']}><AdminCoffretDetailScreen /></Need>} />
+            <Route path="/admin/avis" element={<Need perms={['reviews']}><AdminReviewsScreen /></Need>} />
+            <Route path="/admin/cartes-cadeaux" element={<Need perms={['giftcards']}><AdminGiftCardsScreen /></Need>} />
+            <Route path="/admin/liste-attente" element={<Need perms={['waitlist']}><AdminWaitlistScreen /></Need>} />
+            <Route path="/admin/livraison" element={<Need perms={['settings']}><AdminZonesScreen /></Need>} />
+            <Route path="/admin/categories" element={<Need perms={['catalog']}><AdminCategoriesScreen /></Need>} />
+            <Route path="/admin/occasions" element={<Need perms={['catalog']}><AdminOccasionsScreen /></Need>} />
+            <Route path="/admin/symboles" element={<Need perms={['catalog']}><AdminSymbolsScreen /></Need>} />
+            <Route path="/admin/lookbook" element={<Need perms={['catalog']}><AdminLookbookScreen /></Need>} />
+            <Route path="/admin/visiteurs" element={<Need perms={['analytics']}><AdminVisitorsScreen /></Need>} />
+            <Route path="/admin/site" element={<Need perms={['settings']}><AdminSiteScreen /></Need>} />
+            <Route path="/admin/aide" element={<AdminHelpScreen />} />
+            <Route path="/admin/equipe" element={<Need perms={['team']}><AdminTeamScreen /></Need>} />
+            <Route path="/admin/journal" element={<Need perms={['journal']}><AdminJournalScreen /></Need>} />
           </Route>
         </Route>
       </Routes>

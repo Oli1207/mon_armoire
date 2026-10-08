@@ -3,7 +3,9 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from catalog.serializers import ProductListSerializer
-from .models import User, Address, Favorite, unique_username
+from common.places import clean_place
+from .models import AuditLog, User, Address, Favorite, unique_username
+from .permissions import ROLES, effective_permissions
 
 
 # ── JWT token enrichi ─────────────────────────────────────────────────────────
@@ -16,6 +18,12 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['username']  = user.username
         token['is_staff']  = user.is_staff
         return token
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        if self.user.is_staff:   # connexion du personnel : tracée dans le journal
+            AuditLog.objects.create(actor=self.user, actor_label=self.user.email[:254], action='login', summary='Connexion à l’espace Admin')
+        return data
 
 
 # ── Inscription ───────────────────────────────────────────────────────────────
@@ -60,11 +68,24 @@ class RegisterSerializer(serializers.ModelSerializer):
 # ── Profil ────────────────────────────────────────────────────────────────────
 class UserSerializer(serializers.ModelSerializer):
     referrals_count = serializers.IntegerField(source='referrals.count', read_only=True)
+    staff           = serializers.SerializerMethodField()
 
     class Meta:
         model  = User
-        fields = ('id', 'email', 'username', 'full_name', 'phone', 'is_staff', 'referral_code', 'referrals_count')
-        read_only_fields = ('id', 'email', 'username', 'is_staff', 'referral_code', 'referrals_count')
+        fields = ('id', 'email', 'username', 'full_name', 'phone', 'is_staff', 'staff', 'referral_code', 'referrals_count')
+        read_only_fields = ('id', 'email', 'username', 'is_staff', 'staff', 'referral_code', 'referrals_count')
+
+    def get_staff(self, user):
+        """Droits du personnel (le menu Admin n'affiche que ce qui est permis ; le serveur revérifie chaque action)."""
+        perms = effective_permissions(user)
+        if not perms:
+            return None
+        profile = getattr(user, 'staff_profile', None)
+        return {
+            'is_owner': user.is_superuser,
+            'role': 'Propriétaire' if user.is_superuser else ROLES.get(profile.role, (profile.role,))[0],
+            'permissions': sorted(perms),
+        }
 
 
 # ── Changement de mot de passe ────────────────────────────────────────────────
@@ -92,7 +113,20 @@ class ResetPasswordSerializer(serializers.Serializer):
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Address
-        fields = ('id', 'label', 'full_name', 'phone', 'country', 'city', 'street', 'is_default')
+        fields = ('id', 'label', 'full_name', 'phone', 'country', 'city', 'commune', 'quartier', 'street', 'is_default')
+        extra_kwargs = {'commune': {'required': False}, 'quartier': {'required': False}}
+
+    def validate(self, attrs):
+        # Création, ou modification de la ville / commune / quartier : le lieu doit être complet (les anciennes adresses restent modifiables autrement)
+        touched = self.instance is None or {'city', 'commune', 'quartier'} & set(attrs)
+        if touched:
+            city = attrs.get('city', getattr(self.instance, 'city', ''))
+            commune = attrs.get('commune', getattr(self.instance, 'commune', ''))
+            quartier = attrs.get('quartier', getattr(self.instance, 'quartier', ''))
+            attrs['commune'], attrs['quartier'], error = clean_place(city, commune, quartier)
+            if error:
+                raise serializers.ValidationError({'quartier' if 'quartier' in error else 'commune': error})
+        return attrs
 
 
 # ── Favoris ───────────────────────────────────────────────────────────────────

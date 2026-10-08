@@ -153,6 +153,9 @@ Préfixe commun, noté `ENV` : `source /home/VOTRE_LOGIN/virtualenv/mon_armoire/
 | `*/30 * * * *` | `ENV python manage.py send_restock_notifications` | e-mails « de retour en stock » (100 maximum par exécution) |
 | `0 4 * * 0` | `ENV python manage.py flushexpiredtokens` | purge les anciens jetons de connexion |
 | `30 4 * * 0` | `ENV python manage.py clearsessions` | purge les anciennes sessions de l'admin |
+| `*/5 * * * *` | `ENV python manage.py send_pending_alerts` | envoie les alertes en attente : équipe (nouvelle commande, stock faible, avis) et suivi de commande aux clientes |
+| `5 * * * *` (toutes les heures) | `ENV python manage.py aggregate_analytics` | calcule les chiffres de l'écran Visiteurs (aujourd'hui et hier) |
+| `45 3 * * *` | `ENV python manage.py purge_old_data` | supprime les visites détaillées de plus de 90 jours (les chiffres journaliers restent) et le journal de plus de 2 ans |
 
 (Le dossier `deploy/` est déjà là grâce au clone GitHub : faire `chmod 700 ~/mon_armoire/deploy/*.sh`.)
 

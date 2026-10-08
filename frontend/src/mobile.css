@@ -21,3 +21,9 @@
 /* Cibles tactiles ≥ 44 px */
 .rating-link { min-height: 2.75rem; }
 .product-card .card-body > .d-flex > a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+
+/* Guide d'installation */
+.install-guide { background: #fff; border: 2px solid #333; border-radius: var(--bs-border-radius-sm); padding: 0.25rem 1rem 0.75rem; margin-bottom: 0.75rem; }
+.install-guide summary { min-height: 2.75rem; display: flex; align-items: center; font-weight: 600; cursor: pointer; }
+.install-guide ol { padding-left: 1.2rem; }
+.install-guide li { margin-bottom: 0.5rem; }

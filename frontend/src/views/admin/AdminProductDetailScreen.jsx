@@ -3,11 +3,12 @@ import { useParams, Link } from 'react-router-dom';
 import { adminAPI } from '../../utils/api';
 import ListStatus from '../../components/ListStatus';
 import { useAdminUi } from './ui/AdminUi';
+import EngravingEditor from './ui/EngravingEditor';
 import { Field, MAX_IMAGE_MB, PageHeader, errorText } from './ui/parts';
 
 const EMPTY_VARIANT = { color: '', size: '', material: '', price: '', stock: '' };
 
-function VariantCard({ variant, onSave, onRemove, onPhoto }) {
+function VariantCard({ variant, onSave, onRemove, onPhoto, personalizable, onEngrave }) {
   // Les champs enregistrent automatiquement quand on quitte la case, seulement si la valeur a changé
   const blurSave = (field, original) => (e) => {
     const value = e.target.value;
@@ -52,6 +53,11 @@ function VariantCard({ variant, onSave, onRemove, onPhoto }) {
           {variant.image ? 'Changer la photo de cette variante' : 'Ajouter une photo propre à cette variante (facultatif)'}
           <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onPhoto(variant.id, f); }} />
         </label>
+        {personalizable && variant.image && (
+          <button type="button" className="btn btn-outline-primary btn-sm" onClick={() => onEngrave(variant)}>
+            {variant.engraving_zone ? 'Modifier la zone de gravure de cette photo ✓' : 'Définir la zone de gravure de cette photo'}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -67,6 +73,8 @@ export default function AdminProductDetailScreen() {
   const [newVariant, setNewVariant] = useState(EMPTY_VARIANT);
   const [variantError, setVariantError] = useState('');
   const [uploading, setUploading] = useState('');
+  const [engraving, setEngraving] = useState(null); // { kind: 'image' | 'variant', target, image, zone, label }
+  const [savingZone, setSavingZone] = useState(false);
   // Incrémenté seulement après une erreur : les champs repartent des valeurs enregistrées (sinon on ne touche pas aux champs : le focus reste)
   const [epoch, setEpoch] = useState(0);
 
@@ -139,6 +147,16 @@ export default function AdminProductDetailScreen() {
     if (accepted) run(() => adminAPI.deleteImage(image.id), 'Photo supprimée.');
   };
 
+  const saveZone = async (zone) => {
+    setSavingZone(true);
+    const action = engraving.kind === 'image'
+      ? () => adminAPI.saveImageZone(engraving.target, zone)
+      : () => adminAPI.updateVariant(engraving.target, { engraving_zone: zone });
+    const ok = await run(action, zone ? 'Zone de gravure enregistrée. Ouvrez « Voir sur le site » pour l’essayer.' : 'Zone de gravure supprimée pour cette photo.');
+    setSavingZone(false);
+    if (ok) setEngraving(null);
+  };
+
   if (!product) {
     return (
       <div>
@@ -184,9 +202,23 @@ export default function AdminProductDetailScreen() {
           </div>
           <div className="form-check">
             <input id="p-perso" type="checkbox" className="form-check-input" checked={product.is_personalizable} onChange={(e) => saveField('is_personalizable', e.target.checked)} />
-            <label className="form-check-label" htmlFor="p-perso">Personnalisable (texte de gravure)</label>
+            <label className="form-check-label" htmlFor="p-perso">Personnalisable (la cliente peut demander une gravure)</label>
           </div>
         </div>
+        {product.is_personalizable && (
+          <>
+            <Field
+              label="Nombre maximum de lettres de la gravure" htmlFor="p-maxchars"
+              help="Exemple : 12 pour un prénom sur une médaille, 20 pour une plaque. La cliente ne peut pas dépasser ce nombre."
+            >
+              <input id="p-maxchars" type="number" min="1" max="60" inputMode="numeric" className="form-control" style={{ maxWidth: '8rem' }} defaultValue={product.engraving_max_chars} onBlur={(e) => { if (e.target.value !== String(product.engraving_max_chars)) saveField('engraving_max_chars', e.target.value); }} />
+            </Field>
+            <p className="admin-help">
+              Pour que la cliente voie un aperçu réaliste, définissez <strong>où le texte apparaît</strong> sur chaque photo : section « Photos » plus bas, bouton « Zone de gravure » sous la photo.
+              {!product.images.some((i) => i.engraving_zone) && ' Aucune zone n’est encore définie : sans zone, la cliente n’a pas d’aperçu (la gravure reste commandable).'}
+            </p>
+          </>
+        )}
         {occasions.length > 0 && (
           <Field label="Occasions" help="Pour apparaître dans « Je cherche un cadeau ».">
             <div className="admin-checks">
@@ -216,6 +248,11 @@ export default function AdminProductDetailScreen() {
               {img.is_main && <span className="admin-main-flag">Principale</span>}
               <img src={img.thumbnail || img.image} alt="" loading="lazy" />
               <div className="tile-actions">
+                {product.is_personalizable && (
+                  <button type="button" onClick={() => setEngraving({ kind: 'image', target: img.id, image: img.image, zone: img.engraving_zone, label: img.is_main ? 'photo principale' : 'cette photo' })}>
+                    {img.engraving_zone ? 'Zone de gravure ✓' : 'Zone de gravure'}
+                  </button>
+                )}
                 {!img.is_main && <button type="button" onClick={() => run(() => adminAPI.setMainImage(img.id), 'Photo principale modifiée.')}>Mettre en principale</button>}
                 <button type="button" className="is-danger" onClick={() => removePhoto(img)}>Supprimer</button>
               </div>
@@ -229,11 +266,23 @@ export default function AdminProductDetailScreen() {
         <p className="admin-card-note">Photos réduites automatiquement pour que le site reste rapide. Maximum {MAX_IMAGE_MB} Mo par photo.</p>
       </section>
 
+      {engraving && (
+        <EngravingEditor
+          key={`${engraving.kind}-${engraving.target}`}
+          image={engraving.image} zone={engraving.zone} label={engraving.label} saving={savingZone}
+          onSave={saveZone} onRemove={() => saveZone(null)} onClose={() => setEngraving(null)}
+        />
+      )}
+
       <section className="admin-card">
         <h2 className="admin-card-title">Variantes (couleurs, tailles, prix, stock)</h2>
         {product.variants.length === 0 && <p className="admin-help mb-3">Ajoutez au moins une variante : sans variante, le produit ne peut pas être acheté.</p>}
         {product.variants.map((v) => (
-          <VariantCard key={`${v.id}-${epoch}`} variant={v} onSave={saveVariant} onRemove={removeVariant} onPhoto={uploadVariantPhoto} />
+          <VariantCard
+            key={`${v.id}-${epoch}`} variant={v} onSave={saveVariant} onRemove={removeVariant} onPhoto={uploadVariantPhoto}
+            personalizable={product.is_personalizable}
+            onEngrave={(variant) => setEngraving({ kind: 'variant', target: variant.id, image: variant.image, zone: variant.engraving_zone, label: `photo de la variante « ${variant.label} »` })}
+          />
         ))}
 
         <form className="variant-card is-new" onSubmit={addVariant} noValidate>

@@ -6,8 +6,10 @@ from django.db.models.functions import Coalesce, TruncDate
 from django.utils import timezone
 
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAdminUser
+
 from rest_framework.response import Response
+from analytics.models import EVENT_TYPES, TrackEvent
+from userauths.permissions import effective_permissions, staff_can
 
 from catalog.models import Product, ProductVariant, WaitlistEntry
 from catalog.serializers import ProductListSerializer
@@ -27,7 +29,7 @@ STATS_CACHE_SECONDS = 60
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('analytics')])
 def stats_overview(request):
     return Response(cache.get_or_set(STATS_CACHE_KEY, _compute_stats, STATS_CACHE_SECONDS))
 
@@ -117,7 +119,7 @@ def _per_user(model, **filters):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('customers')])
 def customers_list(request):
     search = (request.query_params.get('search') or '').strip()[:100]
     qs = User.objects.filter(is_staff=False)
@@ -164,7 +166,7 @@ def customers_list(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('customers')])
 def customer_detail(request, user_id):
     try:
         u = User.objects.get(id=user_id)
@@ -185,10 +187,20 @@ def customer_detail(request, user_id):
     orders_total = orders.count()
     orders = orders[:50]
 
+    # Parcours sur le site : réservé au droit « statistiques » (donnée de comportement)
+    activity = None
+    if 'analytics' in effective_permissions(request.user):
+        labels = dict(EVENT_TYPES)
+        activity = [
+            {'label': labels.get(e.type, e.type), 'detail': e.product.name if e.product else (e.ref or e.path), 'at': e.created_at}
+            for e in TrackEvent.objects.filter(session__user=u).select_related('product').order_by('-created_at')[:40]
+        ]
+
     return Response({
         'id': u.id,
         'email': u.email,
         'full_name': u.full_name,
+        'activity': activity,
         'phone': u.phone,
         'date_joined': u.date_joined,
         'is_active': u.is_active,
@@ -202,7 +214,7 @@ def customer_detail(request, user_id):
 
 # ── Commandes (toutes, avec filtre statut et recherche) ─────────────────────
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('orders')])
 def admin_orders_list(request):
     qs = order_queryset()
     status_filter = request.query_params.get('status')

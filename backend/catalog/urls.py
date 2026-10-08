@@ -32,4 +32,5 @@ urlpatterns = [
     path('admin/product-options/',      admin_views.admin_product_options,   name='admin_product_options'),
     path('admin/variant-options/',      admin_views.admin_variant_options,   name='admin_variant_options'),
     path('admin/waitlist/',             admin_views.admin_waitlist,          name='admin_waitlist'),
+    path('admin/waitlist/<uuid:pk>/',   admin_views.admin_waitlist_detail,   name='admin_waitlist_detail'),
 ]

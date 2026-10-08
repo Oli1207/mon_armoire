@@ -1,7 +1,8 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAdminUser
+
 from rest_framework.response import Response
+from userauths.permissions import staff_can
 
 from .models import Coffret, CoffretItem, CoffretSlot
 from .admin_serializers import CoffretAdminSerializer, CoffretItemAdminSerializer, CoffretSlotAdminSerializer
@@ -10,14 +11,14 @@ from common.admin_crud import list_create as _list_create, update_delete as _upd
 
 
 @api_view(['GET', 'POST'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_coffrets(request):
     qs = Coffret.objects.prefetch_related('slots', 'included_items').order_by('-created_at')
     return _list_create(request, qs, CoffretAdminSerializer)
 
 
 @api_view(['GET', 'PATCH', 'DELETE'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_coffret_detail(request, pk):
     try:
         obj = Coffret.objects.get(pk=pk)
@@ -29,7 +30,7 @@ def admin_coffret_detail(request, pk):
 
 
 @api_view(['POST'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_slot_create(request, coffret_id):
     try:
         coffret = Coffret.objects.get(pk=coffret_id)
@@ -43,7 +44,7 @@ def admin_slot_create(request, coffret_id):
 
 
 @api_view(['PATCH', 'DELETE'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_slot_detail(request, pk):
     try:
         obj = CoffretSlot.objects.get(pk=pk)
@@ -54,7 +55,7 @@ def admin_slot_detail(request, pk):
 
 # ── Éléments inclus par défaut ────────────────────────────────────────────────
 @api_view(['POST'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_coffret_item_create(request, coffret_id):
     try:
         coffret = Coffret.objects.get(pk=coffret_id)
@@ -68,7 +69,7 @@ def admin_coffret_item_create(request, coffret_id):
 
 
 @api_view(['PATCH', 'DELETE'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_coffret_item_detail(request, pk):
     try:
         obj = CoffretItem.objects.get(pk=pk)

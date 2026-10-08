@@ -12,6 +12,9 @@ from rest_framework.response import Response
 from common.http import public_cache
 from reviews.models import Review
 from common.pagination import paginate
+from common.phone import clean_phone
+from notifications.alerts import queue_staff_alert
+from notifications.models import PushSubscription
 from common.throttles import SignupThrottle
 from .models import Category, Collection, LookbookEntry, Product, ProductImage, ProductVariant, SymbolGuideEntry, WaitlistEntry
 from .search import smart_search
@@ -185,16 +188,30 @@ def waitlist_join(request):
     name       = str(request.data.get('name') or '').strip()[:200]
 
     if not variant_id or not email:
-        return Response({'error': 'Variante et email requis.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Indiquez votre adresse e-mail et votre numéro de téléphone.'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         validate_email(email)
     except ValidationError:
-        return Response({'error': 'Adresse e-mail invalide.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'email': 'Adresse e-mail invalide.', 'error': 'Adresse e-mail invalide.'}, status=status.HTTP_400_BAD_REQUEST)
+    phone, phone_error = clean_phone(request.data.get('phone'))
+    if phone_error:
+        return Response({'phone': phone_error, 'error': phone_error}, status=status.HTTP_400_BAD_REQUEST)
+    endpoint = str(request.data.get('push_endpoint') or '')[:500]
+    subscription = PushSubscription.objects.filter(endpoint=endpoint).first() if endpoint else None
 
     try:
         variant = ProductVariant.objects.get(id=variant_id, product__is_active=True)
     except (ProductVariant.DoesNotExist, ValueError, ValidationError):
         return Response({'error': 'Variante introuvable.'}, status=status.HTTP_404_NOT_FOUND)
 
-    entry, created = WaitlistEntry.objects.get_or_create(variant=variant, email=email, defaults={'name': name})
+    entry, created = WaitlistEntry.objects.get_or_create(
+        variant=variant, email=email, defaults={'name': name, 'phone': phone, 'push_subscription': subscription},
+    )
+    if created:
+        queue_staff_alert('waitlist', 'waitlist', 'Nouvelle inscription en liste d’attente', f'pour « {variant.product.name} »', '/admin/liste-attente')
+    if not created:   # la personne revient : on met à jour ses moyens de contact
+        entry.phone = phone
+        if subscription:
+            entry.push_subscription = subscription
+        entry.save(update_fields=['phone', 'push_subscription'])
     return Response(WaitlistEntrySerializer(entry).data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)

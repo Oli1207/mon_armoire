@@ -4,10 +4,12 @@ import { FaBars, FaSearch, FaUser, FaShoppingBag, FaTimes } from 'react-icons/fa
 import useAuthStore from '../store/auth';
 import useCartStore from '../store/cart';
 import { productsAPI } from '../utils/api';
+import useSiteStore from '../store/site';
 
 export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuthStore();
   const { fetchCart, itemCount } = useCartStore();
+  const { site } = useSiteStore();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -58,9 +60,7 @@ export default function Navbar() {
 
   return (
     <header>
-      <div className="topbar text-center py-2 text-uppercase">
-        Livraison rapide en Côte d'Ivoire · Emballage cadeau offert · Paiement sécurisé
-      </div>
+      {site.announcement && <div className="topbar text-center py-2 text-uppercase">{site.announcement}</div>}
 
       <nav className="navbar-main py-3">
         <div className="container d-flex align-items-center justify-content-between">

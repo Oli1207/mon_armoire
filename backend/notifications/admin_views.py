@@ -1,7 +1,8 @@
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAdminUser
+
 from rest_framework.response import Response
+from userauths.permissions import staff_can
 from django.db.models import Q
 
 from common.admin_crud import update_delete
@@ -28,7 +29,7 @@ class VerseAdminSerializer(serializers.ModelSerializer):
 
 
 @api_view(['GET', 'POST'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('settings')])
 def admin_verses(request):
     if request.method == 'POST':
         serializer = VerseAdminSerializer(data=request.data)
@@ -44,7 +45,7 @@ def admin_verses(request):
 
 
 @api_view(['PATCH', 'DELETE'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('settings')])
 def admin_verse_detail(request, pk):
     try:
         verse = Verse.objects.get(pk=pk)

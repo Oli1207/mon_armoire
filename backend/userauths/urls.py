@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from . import views
+from . import admin_views, views
 
 urlpatterns = [
     path('token/',         views.MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -15,6 +15,11 @@ urlpatterns = [
 
     path('addresses/',                          views.addresses_view,       name='addresses'),
     path('addresses/<uuid:address_id>/',        views.address_detail_view,  name='address_detail'),
+
+    path('admin/team/',                          admin_views.admin_team,        name='admin_team'),
+    path('admin/team/<uuid:pk>/',                admin_views.admin_team_detail, name='admin_team_detail'),
+    path('admin/team/<uuid:pk>/invite/',         admin_views.admin_team_invite, name='admin_team_invite'),
+    path('admin/journal/',                       admin_views.admin_journal,     name='admin_journal'),
 
     path('favorites/',                           views.favorites_list,      name='favorites_list'),
     path('favorites/ids/',                       views.favorite_ids,        name='favorite_ids'),

@@ -6,6 +6,7 @@ import { productsAPI, categoriesAPI, favoritesAPI, collectionsAPI } from '../../
 import useAuthStore from '../../store/auth';
 import { useLoadMore } from '../../utils/usePaginated';
 import { StarRating } from '../../components/Stars';
+import { track } from '../../utils/tracker';
 
 export default function CatalogueScreen() {
   const { isAuthenticated } = useAuthStore();
@@ -40,6 +41,13 @@ export default function CatalogueScreen() {
   if (maxPrice) params.max_price = maxPrice;
   const { items: products, loading, error, hasMore, loadingMore, loadMore, reload } = useLoadMore(productsAPI.list, params);
 
+  // Une recherche est comptée une fois, avec son nombre de résultats (les recherches sans résultat disent à la boutique ce qui manque).
+  useEffect(() => {
+    const term = search.trim().toLowerCase().slice(0, 80);
+    if (!term || loading || error || term.includes('@')) return;
+    track('search', { ref: term, v: products.length });
+  }, [search, loading]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (!isAuthenticated) {
       setFavoriteIds(new Set());
@@ -48,9 +56,11 @@ export default function CatalogueScreen() {
     favoritesAPI.ids().then(({ data }) => setFavoriteIds(new Set(data))).catch(() => {});
   }, [isAuthenticated]);
 
-  const toggleFavorite = async (productId) => {
+  const toggleFavorite = async (product) => {
+    const productId = product.id;
     if (!isAuthenticated) return;
     await favoritesAPI.toggle(productId);
+    track(favoriteIds.has(productId) ? 'favorite_remove' : 'favorite_add', { p: product.slug });
     setFavoriteIds((prev) => {
       const next = new Set(prev);
       if (next.has(productId)) next.delete(productId);
@@ -135,7 +145,7 @@ export default function CatalogueScreen() {
                       <Link to={`/produits/${p.slug}`} className="text-decoration-none text-dark">
                         <h6 className="mb-1">{p.name}</h6>
                       </Link>
-                      <button className="fav-btn btn btn-sm p-0 border-0 bg-transparent" onClick={() => toggleFavorite(p.id)} aria-label={favoriteIds.has(p.id) ? `Retirer ${p.name} des favoris` : `Ajouter ${p.name} aux favoris`}>
+                      <button className="fav-btn btn btn-sm p-0 border-0 bg-transparent" onClick={() => toggleFavorite(p)} aria-label={favoriteIds.has(p.id) ? `Retirer ${p.name} des favoris` : `Ajouter ${p.name} aux favoris`}>
                         {favoriteIds.has(p.id) ? <FaHeart color="#C9A227" /> : <FaRegHeart />}
                       </button>
                     </div>

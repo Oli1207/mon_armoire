@@ -1,9 +1,11 @@
 from django.db import transaction
 from django.db.models import Q
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAdminUser
+
 from rest_framework.response import Response
+from userauths.permissions import staff_can
 
 from common.pagination import AdminPagination, paginate
 from .models import Category, Collection, LookbookEntry, Product, ProductImage, ProductVariant, SymbolGuideEntry, WaitlistEntry
@@ -18,13 +20,13 @@ from common.admin_crud import list_create as _list_create, update_delete as _upd
 
 # ── Catégories ────────────────────────────────────────────────────────────────
 @api_view(['GET', 'POST'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_categories(request):
     return _list_create(request, Category.objects.all().order_by('order', 'name'), CategoryAdminSerializer)
 
 
 @api_view(['PATCH', 'DELETE'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_category_detail(request, pk):
     try:
         obj = Category.objects.get(pk=pk)
@@ -35,13 +37,13 @@ def admin_category_detail(request, pk):
 
 # ── Collections ───────────────────────────────────────────────────────────────
 @api_view(['GET', 'POST'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_collections(request):
     return _list_create(request, Collection.objects.all().order_by('kind', 'order'), CollectionAdminSerializer)
 
 
 @api_view(['PATCH', 'DELETE'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_collection_detail(request, pk):
     try:
         obj = Collection.objects.get(pk=pk)
@@ -52,7 +54,7 @@ def admin_collection_detail(request, pk):
 
 # ── Produits ──────────────────────────────────────────────────────────────────
 @api_view(['GET', 'POST'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_products(request):
     qs = Product.objects.select_related('category').prefetch_related('variants', 'images', 'collections').order_by('-created_at', 'id')
     if request.method == 'GET':
@@ -64,14 +66,14 @@ def admin_products(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_product_options(request):
     """Liste compacte (id + nom) de tous les produits pour les menus de choix (lookbook)."""
     return Response(list(Product.objects.order_by('name').values('id', 'name')[:2000]))
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_variant_options(request):
     """Liste compacte de toutes les variantes (id + libellé) pour les menus de choix du back-office (coffrets)."""
     variants = ProductVariant.objects.select_related('product').order_by('product__name', 'id')[:2000]
@@ -82,7 +84,7 @@ def admin_variant_options(request):
 
 
 @api_view(['GET', 'PATCH', 'DELETE'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_product_detail(request, pk):
     try:
         obj = Product.objects.get(pk=pk)
@@ -95,7 +97,7 @@ def admin_product_detail(request, pk):
 
 # ── Variantes ─────────────────────────────────────────────────────────────────
 @api_view(['POST'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_variant_create(request, product_id):
     try:
         product = Product.objects.get(pk=product_id)
@@ -109,7 +111,7 @@ def admin_variant_create(request, product_id):
 
 
 @api_view(['PATCH', 'DELETE'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_variant_detail(request, pk):
     try:
         obj = ProductVariant.objects.get(pk=pk)
@@ -122,7 +124,7 @@ def admin_variant_detail(request, pk):
 
 # ── Images ────────────────────────────────────────────────────────────────────
 @api_view(['POST'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_image_create(request, product_id):
     try:
         product = Product.objects.get(pk=product_id)
@@ -136,15 +138,20 @@ def admin_image_create(request, product_id):
 
 
 @api_view(['PATCH', 'DELETE'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_image_delete(request, pk):
     try:
         obj = ProductImage.objects.get(pk=pk)
     except (ProductImage.DoesNotExist, ValueError):
         return Response({'error': 'Image introuvable.'}, status=status.HTTP_404_NOT_FOUND)
     if request.method == 'PATCH':
-        # Une seule photo principale par produit
         with transaction.atomic():
+            if 'engraving_zone' in request.data:
+                serializer = ProductImageAdminSerializer(obj, data={'engraving_zone': request.data['engraving_zone']}, partial=True)
+                if not serializer.is_valid():
+                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                serializer.save()
+            # Une seule photo principale par produit
             if request.data.get('is_main') in (True, 'true', 'True', '1', 1):
                 ProductImage.objects.filter(product=obj.product).exclude(pk=obj.pk).update(is_main=False)
                 obj.is_main = True
@@ -156,13 +163,13 @@ def admin_image_delete(request, pk):
 
 # ── Guide des symboles ────────────────────────────────────────────────────────
 @api_view(['GET', 'POST'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_symbols(request):
     return _list_create(request, SymbolGuideEntry.objects.select_related('category').order_by('order', 'name'), SymbolGuideAdminSerializer)
 
 
 @api_view(['PATCH', 'DELETE'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_symbol_detail(request, pk):
     try:
         obj = SymbolGuideEntry.objects.get(pk=pk)
@@ -173,13 +180,13 @@ def admin_symbol_detail(request, pk):
 
 # ── Lookbook / galerie ────────────────────────────────────────────────────────
 @api_view(['GET', 'POST'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_lookbook(request):
     return _list_create(request, LookbookEntry.objects.prefetch_related('products').order_by('order', '-created_at'), LookbookEntryAdminSerializer)
 
 
 @api_view(['PATCH', 'DELETE'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('catalog')])
 def admin_lookbook_detail(request, pk):
     try:
         obj = LookbookEntry.objects.get(pk=pk)
@@ -190,10 +197,32 @@ def admin_lookbook_detail(request, pk):
 
 # ── Liste d'attente ────────────────────────────────────────────────────────────
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('waitlist')])
 def admin_waitlist(request):
     qs = WaitlistEntry.objects.select_related('variant__product').order_by('-created_at', 'id')
     search = (request.query_params.get('search') or '').strip()[:100]
     if search:
-        qs = qs.filter(Q(email__icontains=search) | Q(variant__product__name__icontains=search))
+        qs = qs.filter(Q(email__icontains=search) | Q(phone__icontains=search) | Q(name__icontains=search) | Q(variant__product__name__icontains=search))
+    state = request.query_params.get('state')
+    if state == 'to_call':      # le bijou est de retour en stock et personne n'a encore relancé cette personne à la main
+        qs = qs.filter(variant__stock__gt=0, contacted=False)
+    elif state == 'contacted':
+        qs = qs.filter(contacted=True)
     return paginate(request, qs, WaitlistEntryAdminSerializer, pagination=AdminPagination)
+
+
+@api_view(['PATCH', 'DELETE'])
+@permission_classes([staff_can('waitlist')])
+def admin_waitlist_detail(request, pk):
+    try:
+        entry = WaitlistEntry.objects.select_related('variant__product').get(pk=pk)
+    except (WaitlistEntry.DoesNotExist, ValueError):
+        return Response({'error': 'Inscription introuvable.'}, status=status.HTTP_404_NOT_FOUND)
+    if request.method == 'DELETE':
+        entry.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    if 'contacted' in request.data:
+        entry.contacted = request.data['contacted'] in (True, 'true', 'True', '1', 1)
+        entry.contacted_at = timezone.now() if entry.contacted else None
+        entry.save(update_fields=['contacted', 'contacted_at'])
+    return Response(WaitlistEntryAdminSerializer(entry).data)

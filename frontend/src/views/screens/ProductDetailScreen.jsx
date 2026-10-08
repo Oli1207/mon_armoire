@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { FaHeart, FaRegHeart, FaWhatsapp, FaFacebook, FaLink } from 'react-icons/fa';
-import { productsAPI, favoritesAPI, reviewsAPI, waitlistAPI } from '../../utils/api';
+import { productsAPI, favoritesAPI, reviewsAPI } from '../../utils/api';
 import useAuthStore from '../../store/auth';
 import useCartStore from '../../store/cart';
 import { useLoadMore } from '../../utils/usePaginated';
@@ -10,6 +10,9 @@ import { StarRating } from '../../components/Stars';
 import { errorText } from '../../utils/errors';
 import Suggestions from '../../components/Suggestions';
 import DetailSkeleton from '../../components/DetailSkeleton';
+import { track } from '../../utils/tracker';
+import EngravingPreview from '../../components/EngravingPreview';
+import WaitlistForm from '../../components/WaitlistForm';
 
 export default function ProductDetailScreen() {
   const { slug } = useParams();
@@ -25,16 +28,13 @@ export default function ProductDetailScreen() {
   const [linkCopied, setLinkCopied] = useState(false);
   const [activeImage, setActiveImage] = useState(null);
   const [engravingText, setEngravingText] = useState('');
-  const [waitlistEmail, setWaitlistEmail] = useState('');
-  const [waitlistDone, setWaitlistDone] = useState(false);
-  const [waitlistError, setWaitlistError] = useState('');
-  const [joiningWaitlist, setJoiningWaitlist] = useState(false);
 
   const loadProduct = useCallback(() => {
     setLoadError(null);
     productsAPI.detail(slug)
       .then(({ data }) => {
         setProduct(data);
+        track('product_view', { p: data.slug });
         setVariant(data.variants.find((v) => v.is_default) || data.variants[0] || null);
         setActiveImage(null);
       })
@@ -60,23 +60,10 @@ export default function ProductDetailScreen() {
     { slug: product?.slug }, Boolean(product),
   );
 
-  const handleJoinWaitlist = async () => {
-    if (!waitlistEmail.trim()) return;
-    setWaitlistError('');
-    setJoiningWaitlist(true);
-    try {
-      await waitlistAPI.join({ variant: variant.id, email: waitlistEmail.trim() });
-      setWaitlistDone(true);
-    } catch {
-      setWaitlistError("Erreur lors de l'inscription.");
-    } finally {
-      setJoiningWaitlist(false);
-    }
-  };
-
   const toggleFavorite = async () => {
     if (!isAuthenticated || !product) return;
     await favoritesAPI.toggle(product.id);
+    track(isFavorite ? 'favorite_remove' : 'favorite_add', { p: product.slug });
     setIsFavorite((v) => !v);
   };
 
@@ -102,6 +89,13 @@ export default function ProductDetailScreen() {
   }
   if (!product) return <DetailSkeleton />;
 
+  // Zone de gravure de la photo actuellement affichée (la cliente la définit photo par photo dans l'Admin)
+  const shownImage = activeImage
+    ? product.images.find((img) => img.image === activeImage)
+    : (variant?.image ? variant : product.images[0]);
+  const engravingZone = shownImage?.engraving_zone || null;
+  const engravingLimit = product.engraving_max_chars || 30;
+
   return (
     <div className="container py-5">
       <p className="small text-muted mb-3">
@@ -119,11 +113,7 @@ export default function ProductDetailScreen() {
                 className="img-fluid product-photo"
                 style={{ aspectRatio: '1/1', objectFit: 'cover', width: '100%' }}
               />
-              {product.is_personalizable && engravingText.trim() && (
-                <div className="engraving-preview">
-                  <span>{engravingText}</span>
-                </div>
-              )}
+              {product.is_personalizable && <EngravingPreview zone={engravingZone} text={engravingText} />}
             </div>
           ) : (
             <div className="bg-white d-flex align-items-center justify-content-center text-muted" style={{ aspectRatio: '1/1' }}>
@@ -185,7 +175,7 @@ export default function ProductDetailScreen() {
                   <button
                     key={v.id}
                     className={`btn btn-sm ${variant?.id === v.id ? 'btn-primary' : 'btn-outline-primary'}`}
-                    onClick={() => { setVariant(v); setActiveImage(null); setWaitlistDone(false); setWaitlistEmail(''); }}
+                    onClick={() => { setVariant(v); setActiveImage(null); }}
                   >
                     {v.label}
                   </button>
@@ -210,13 +200,18 @@ export default function ProductDetailScreen() {
               </label>
               <input
                 className="form-control"
-                maxLength={60}
+                maxLength={engravingLimit}
                 placeholder="Ex : Un prénom, une date, une courte phrase..."
+                autoComplete="off"
+                aria-describedby="engraving-help"
                 value={engravingText}
                 onChange={(e) => setEngravingText(e.target.value)}
               />
-              <p className="form-text small text-muted mb-0">
-                Aperçu indicatif — le rendu final peut légèrement varier selon le bijou.
+              <p id="engraving-help" className="form-text small text-muted mb-0">
+                {engravingText.length}/{engravingLimit} caractères (lettres, chiffres, espace, apostrophe, point, tiret).{' '}
+                {engravingText.trim() && !engravingZone
+                  ? 'Pas d’aperçu sur cette photo : votre texte sera gravé comme demandé.'
+                  : 'Aperçu indicatif — le rendu final peut légèrement varier selon le bijou.'}
               </p>
             </div>
           )}
@@ -226,31 +221,7 @@ export default function ProductDetailScreen() {
           {variant && variant.stock === 0 && !variant.allow_preorder ? (
             <div className="mt-4 p-3 verse-banner">
               <p className="fw-semibold text-uppercase small tracking-wide mb-1">Rupture de stock</p>
-              {waitlistDone ? (
-                <p className="text-success small mb-0">Vous serez averti(e) dès que ce bijou sera de nouveau disponible.</p>
-              ) : (
-                <>
-                  <p className="text-muted small mb-2">Laissez votre email, nous vous préviendrons dès son retour.</p>
-                  <div className="d-flex gap-2 flex-wrap">
-                    <input
-                      type="email"
-                      className="form-control form-control-sm"
-                      style={{ maxWidth: 220 }}
-                      placeholder="Votre email"
-                      value={waitlistEmail}
-                      onChange={(e) => setWaitlistEmail(e.target.value)}
-                    />
-                    <button
-                      className="btn btn-sm btn-primary text-uppercase small tracking-wide"
-                      disabled={joiningWaitlist || !waitlistEmail.trim()}
-                      onClick={handleJoinWaitlist}
-                    >
-                      {joiningWaitlist ? '...' : "M'avertir"}
-                    </button>
-                  </div>
-                  {waitlistError && <p className="text-danger small mt-2 mb-0">{waitlistError}</p>}
-                </>
-              )}
+              <WaitlistForm key={variant.id} variantId={variant.id} />
             </div>
           ) : (
             <>
@@ -267,6 +238,7 @@ export default function ProductDetailScreen() {
                   setAdding(true);
                   try {
                     await addVariant(variant.id, 1, false, '', engravingText.trim());
+                    track('add_to_cart', { p: product.slug, v: variant.price });
                     navigate('/panier');
                   } catch (err) {
                     setAddError(errorText(err, 'Impossible d’ajouter ce produit au panier.'));

@@ -206,10 +206,32 @@ export const adminAPI = {
   // Listes compactes pour les menus de choix
   productOptions:   ()           => axiosInstance.get('/api/admin/product-options/'),
   setMainImage:     (id)         => axiosInstance.patch(`/api/admin/images/${id}/`, { is_main: true }),
+  saveImageZone:    (id, zone)   => axiosInstance.patch(`/api/admin/images/${id}/`, { engraving_zone: zone }),
 
   // Cartes cadeaux
   giftcards:        (params = {}) => axiosInstance.get('/api/admin/giftcards/', { params }),
 
   // Liste d'attente
   waitlist:         (params = {}) => axiosInstance.get('/api/admin/waitlist/', { params }),
+  updateWaitlistEntry: (id, data) => axiosInstance.patch(`/api/admin/waitlist/${id}/`, data),
+  deleteWaitlistEntry: (id) => axiosInstance.delete(`/api/admin/waitlist/${id}/`),
+
+  // Visiteurs
+  analyticsOverview: (params = {}) => axiosInstance.get('/api/admin/analytics/overview/', { params }),
+  analyticsProducts: (params = {}) => axiosInstance.get('/api/admin/analytics/products/', { params }),
+  analyticsSearches: (params = {}) => axiosInstance.get('/api/admin/analytics/searches/', { params }),
+  carts:            (params = {}) => axiosInstance.get('/api/admin/analytics/carts/', { params }),
+  analyticsPlaces:  (params = {}) => axiosInstance.get('/api/admin/analytics/places/', { params }),
+
+  // Textes et contacts du site
+  siteSettings:       ()     => axiosInstance.get('/api/admin/site/'),
+  updateSiteSettings: (data) => axiosInstance.patch('/api/admin/site/', data),
+
+  // Équipe et journal (propriétaire)
+  team:             ()           => axiosInstance.get('/api/auth/admin/team/'),
+  createMember:     (data)       => axiosInstance.post('/api/auth/admin/team/', data),
+  updateMember:     (id, data)   => axiosInstance.patch(`/api/auth/admin/team/${id}/`, data),
+  deleteMember:     (id)         => axiosInstance.delete(`/api/auth/admin/team/${id}/`),
+  inviteMember:     (id)         => axiosInstance.post(`/api/auth/admin/team/${id}/invite/`),
+  journal:          (params = {}) => axiosInstance.get('/api/auth/admin/journal/', { params }),
 };

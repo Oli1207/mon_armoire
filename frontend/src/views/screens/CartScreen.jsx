@@ -4,6 +4,7 @@ import useCartStore from '../../store/cart';
 import ListStatus from '../../components/ListStatus';
 import Suggestions from '../../components/Suggestions';
 import { errorText } from '../../utils/errors';
+import { track } from '../../utils/tracker';
 
 export default function CartScreen() {
   const { cart, loading, error: loadError, fetchCart, updateItem, removeItem } = useCartStore();
@@ -13,9 +14,11 @@ export default function CartScreen() {
     setError('');
     try {
       await action();
+      return true;
     } catch (err) {
       setError(errorText(err));
       fetchCart();
+      return false;
     }
   };
 
@@ -101,7 +104,7 @@ export default function CartScreen() {
                     }}
                   />
                   <span className="fw-semibold text-gold">{Number(item.subtotal).toLocaleString('fr-FR')} FCFA</span>
-                  <button className="btn btn-sm btn-outline-danger" onClick={() => change(() => removeItem(item.id))}>
+                  <button className="btn btn-sm btn-outline-danger" onClick={() => change(() => removeItem(item.id)).then((ok) => ok && track('remove_from_cart', { p: item.product_slug }))}>
                     Retirer
                   </button>
                 </div>

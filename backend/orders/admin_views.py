@@ -1,7 +1,8 @@
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAdminUser
+
 from rest_framework.response import Response
+from userauths.permissions import staff_can
 
 from common.admin_crud import list_create, update_delete
 from .models import DeliveryZone
@@ -26,13 +27,13 @@ class DeliveryZoneAdminSerializer(serializers.ModelSerializer):
 
 
 @api_view(['GET', 'POST'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('settings')])
 def admin_zones(request):
     return list_create(request, DeliveryZone.objects.order_by('name'), DeliveryZoneAdminSerializer)
 
 
 @api_view(['PATCH', 'DELETE'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('settings')])
 def admin_zone_detail(request, pk):
     try:
         zone = DeliveryZone.objects.get(pk=pk)

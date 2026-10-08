@@ -1,10 +1,12 @@
 from django.db import transaction
 
+from notifications.alerts import queue_order_status_push, queue_staff_alert
+
 from .emails import send_order_status_email
 from .giftcards import activate_gift_card_if_purchase
 from .loyalty import award_points_for_order, award_referral_bonus
 from .models import GiftCard, LoyaltyTransaction, Order, OrderStatusHistory
-from .stock import decrement_stock_for_order
+from .stock import decrement_stock_for_order, low_stock_variants
 
 
 def mark_order_paid(order, note='Paiement confirmé.', notify=True):
@@ -29,6 +31,20 @@ def mark_order_paid(order, note='Paiement confirmé.', notify=True):
         activate_gift_card_if_purchase(locked)
         award_points_for_order(locked)
         award_referral_bonus(locked)
+
+        # Alertes : l'équipe (nouvelle commande, stock bas) et la cliente (suivi) ; envoyées ensuite par le cron
+        engraved = any(item.engraving_text for item in locked.items.all())
+        queue_staff_alert(
+            'order_paid', 'orders', 'Nouvelle commande payée',
+            f'{locked.order_number} — {int(locked.total):,} FCFA'.replace(',', ' ') + (' · avec gravure à faire' if engraved else ''), '/admin/commandes',
+        )
+        for variant in low_stock_variants(locked):
+            name = f'{variant.product.name} ({variant.label})'
+            if variant.stock == 0:
+                queue_staff_alert('out_of_stock', 'catalog', 'Bijou en rupture de stock', f'{name} : plus aucun en stock.', f'/admin/produits/{variant.product_id}')
+            else:
+                queue_staff_alert('low_stock', 'catalog', 'Stock faible', f'{name} : il en reste {variant.stock}.', f'/admin/produits/{variant.product_id}')
+        queue_order_status_push(locked)
 
         if notify:
             transaction.on_commit(lambda: send_order_status_email(locked, note=note))

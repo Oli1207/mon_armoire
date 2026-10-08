@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'reviews',
     'notifications',
     'dashboard',
+    'analytics',
 ]
 
 MIDDLEWARE = [
@@ -50,6 +51,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'userauths.audit.AuditMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -124,6 +126,7 @@ REST_FRAMEWORK = {
         "lookup": "20/minute",
         "signup": "10/minute",
         "review": "10/hour",
+        "track": "60/minute",
     },
 }
 

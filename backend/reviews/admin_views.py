@@ -1,7 +1,8 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAdminUser
+
 from rest_framework.response import Response
+from userauths.permissions import staff_can
 
 from common.pagination import AdminPagination, paginate
 from .models import Review
@@ -9,14 +10,14 @@ from .admin_serializers import ReviewAdminSerializer
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('reviews')])
 def admin_reviews_list(request):
     qs = Review.objects.select_related('product', 'user').prefetch_related('images').order_by('-created_at', 'id')
     return paginate(request, qs, ReviewAdminSerializer, pagination=AdminPagination)
 
 
 @api_view(['PATCH', 'DELETE'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('reviews')])
 def admin_review_detail(request, pk):
     try:
         obj = Review.objects.get(pk=pk)

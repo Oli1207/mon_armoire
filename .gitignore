@@ -34,3 +34,4 @@ backend/.env.*
 
 # Archives préparées pour l envoi sur le serveur
 deploy_upload/
+frontend/dist.zip

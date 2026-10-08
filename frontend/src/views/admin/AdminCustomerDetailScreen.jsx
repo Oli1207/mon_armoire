@@ -40,7 +40,7 @@ export default function AdminCustomerDetailScreen() {
             {customer.addresses.length === 0 && <p className="admin-help">Aucune adresse enregistrée.</p>}
             {customer.addresses.map((a) => (
               <div className="admin-row-line" key={a.id}>
-                <span>{a.full_name} — {a.city}, {a.street}</span>
+                <span>{a.full_name} — {a.commune ? `${a.commune}, ` : ''}{a.quartier ? `${a.quartier}, ` : ''}{a.city}, {a.street}</span>
                 {a.is_default && <span className="status-badge status-on">Par défaut</span>}
               </div>
             ))}
@@ -99,6 +99,22 @@ export default function AdminCustomerDetailScreen() {
             ))}
           </section>
         </div>
+
+        {customer.activity && (
+          <div className="col-12">
+            <section className="admin-card">
+              <h2 className="admin-card-title">Activité récente sur le site</h2>
+              <p className="admin-help">Les dernières pages et bijoux regardés par cette cliente quand elle était connectée (40 derniers gestes).</p>
+              {customer.activity.length === 0 && <p className="admin-help mb-0">Aucune activité enregistrée pour le moment.</p>}
+              {customer.activity.map((a, i) => (
+                <div className="admin-row-line" key={`${a.at}-${i}`}>
+                  <span>{a.label}{a.detail ? ` : ${a.detail}` : ''}</span>
+                  <span className="cell-muted">{new Date(a.at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              ))}
+            </section>
+          </div>
+        )}
       </div>
     </div>
   );

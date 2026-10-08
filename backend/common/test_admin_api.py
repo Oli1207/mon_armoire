@@ -94,7 +94,7 @@ class RouteAuditTests(APITestCase):
 
 class AdminManagementTests(APITestCase):
     def setUp(self):
-        self.admin = User.objects.create_user(username='a', email='a@test.ci', password='Test-pass-123', is_staff=True)
+        self.admin = User.objects.create_user(username='a', email='a@test.ci', password='Test-pass-123', is_staff=True, is_superuser=True)
         self.client.force_authenticate(self.admin)
         self.category = Category.objects.create(name='Chaînes')
 
@@ -259,3 +259,51 @@ class OptimizeImagesCommandTests(APITestCase):
             coffret.refresh_from_db()
             self.assertEqual(coffret.image.name, name)
             self.assertIn('0 image(s)', out.getvalue())
+
+
+class SiteSettingsTests(APITestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(username='boss', email='boss@test.ci', password='x', is_staff=True, is_superuser=True)
+
+    def test_public_endpoint_serves_defaults_and_hides_legal_texts(self):
+        data = self.client.get('/api/site/').data
+        self.assertIn('Livraison rapide', data['announcement'])
+        self.assertEqual(data['contact_email'], 'support@monarmoire.store')
+        self.assertNotIn('terms_text', data)
+        self.assertEqual(set(self.client.get('/api/site/legal/').data), {'terms_text', 'privacy_text'})
+
+    def test_owner_edits_texts_and_changes_are_public(self):
+        self.client.force_authenticate(self.owner)
+        response = self.client.patch('/api/admin/site/', {
+            'announcement': 'Soldes de Noël', 'whatsapp': '+225 07 99 16 73 93', 'instagram': 'https://instagram.com/monarmoire',
+            'terms_text': 'Article 1.\nArticle 2.',
+        }, format='json')
+        self.assertEqual(response.status_code, 200, response.content)
+        self.client.force_authenticate(None)
+        public = self.client.get('/api/site/').data
+        self.assertEqual((public['announcement'], public['whatsapp']), ('Soldes de Noël', '2250799167393'))
+        self.assertEqual(self.client.get('/api/site/legal/').data['terms_text'], 'Article 1.\nArticle 2.')
+
+    def test_bad_values_are_refused_with_clear_messages(self):
+        self.client.force_authenticate(self.owner)
+        for field, value in (('instagram', 'javascript:alert(1)'), ('instagram', 'http://pas-https.com'), ('whatsapp', 'abc'),
+                             ('contact_email', 'pas-un-mail'), ('announcement', 'x' * 500)):
+            response = self.client.patch('/api/admin/site/', {field: value}, format='json')
+            self.assertEqual(response.status_code, 400, (field, value))
+            self.assertIn(field, response.data)
+
+    def test_fake_hero_image_is_refused(self):
+        self.client.force_authenticate(self.owner)
+        fake = SimpleUploadedFile('hero.jpg', b'<?php echo 1;', content_type='image/jpeg')
+        response = self.client.patch('/api/admin/site/', {'hero_image': fake}, format='multipart')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('hero_image', response.data)
+
+    def test_only_staff_with_settings_right_can_edit(self):
+        from userauths.models import StaffProfile
+        member = User.objects.create_user(username='m', email='m@test.ci', password='x', is_staff=True)
+        StaffProfile.objects.create(user=member, role='orders')
+        self.client.force_authenticate(member)
+        self.assertEqual(self.client.patch('/api/admin/site/', {'announcement': 'x'}, format='json').status_code, 403)
+        self.client.force_authenticate(User.objects.create_user(username='c', email='c@test.ci', password='x'))
+        self.assertEqual(self.client.get('/api/admin/site/').status_code, 403)

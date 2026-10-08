@@ -4,8 +4,12 @@ from django.db import transaction
 from django.utils.crypto import get_random_string
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from catalog.engraving import clean_engraving
+from common.places import clean_place
+from notifications.alerts import queue_order_status_push
+from userauths.permissions import staff_can
 
 from catalog.models import ProductVariant
 from coffrets.models import CoffretConfiguration
@@ -70,7 +74,7 @@ def cart_add(request):
     quantity                  = _parse_quantity(request.data.get('quantity', 1))
     gift_wrap                 = bool(request.data.get('gift_wrap', False))
     gift_message              = str(request.data.get('gift_message') or '')[:500]
-    engraving_text            = (request.data.get('engraving_text') or '').strip()[:60]
+    raw_engraving             = request.data.get('engraving_text')
 
     if not cart_id or (not variant_id and not coffret_configuration_id):
         return Response(
@@ -99,7 +103,11 @@ def cart_add(request):
         except (CoffretConfiguration.DoesNotExist, ValueError, ValidationError):
             return Response({'error': 'Coffret configuré introuvable.'}, status=status.HTTP_404_NOT_FOUND)
 
+    engraving_text = ''
     if variant:
+        engraving_text, engraving_error = clean_engraving(variant.product, raw_engraving)
+        if engraving_error:
+            return Response({'error': engraving_error}, status=status.HTTP_400_BAD_REQUEST)
         existing = CartItem.objects.filter(
             cart=cart, variant=variant, gift_wrap=gift_wrap, gift_message=gift_message, engraving_text=engraving_text,
         ).first()
@@ -136,7 +144,7 @@ def cart_add(request):
 def cart_item_update(request, item_id):
     cart_id = request.data.get('cart_id')
     try:
-        item = CartItem.objects.select_related('cart', 'variant').get(id=item_id)
+        item = CartItem.objects.select_related('cart', 'variant__product').get(id=item_id)
     except (CartItem.DoesNotExist, ValueError):
         return Response({'error': 'Article introuvable.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -168,7 +176,10 @@ def cart_item_update(request, item_id):
     if 'gift_message' in request.data:
         item.gift_message = str(request.data['gift_message'] or '')[:500]
     if 'engraving_text' in request.data:
-        item.engraving_text = (request.data['engraving_text'] or '').strip()[:60]
+        text, engraving_error = clean_engraving(item.variant.product if item.variant else None, request.data['engraving_text'])
+        if engraving_error:
+            return Response({'error': engraving_error}, status=status.HTTP_400_BAD_REQUEST)
+        item.engraving_text = text
     item.save()
 
     return Response(serialize_cart(item.cart, request))
@@ -276,8 +287,11 @@ def _build_order(request):
             street = str(request.data.get('street') or '').strip()[:255]
             if not city or not street:
                 raise OrderError('Ville et adresse requises pour la livraison.')
+            commune, quartier, place_error = clean_place(city, request.data.get('commune'), request.data.get('quartier'))
+            if place_error:
+                raise OrderError(place_error)
             address = Address.objects.create(
-                user=user, full_name=full_name, phone=phone, city=city, street=street, is_default=bool(user),
+                user=user, full_name=full_name, phone=phone, city=city, commune=commune, quartier=quartier, street=street, is_default=bool(user),
             )
 
     if delivery_method == 'shipping':
@@ -426,7 +440,7 @@ def order_track(request):
 
 # ── Mise à jour du statut (back-office) ──────────────────────────────────────
 @api_view(['PATCH'])
-@permission_classes([IsAdminUser])
+@permission_classes([staff_can('orders_manage')])
 def order_update_status(request, order_number):
     new_status = request.data.get('status')
     note       = str(request.data.get('note') or '')[:255]
@@ -462,6 +476,7 @@ def order_update_status(request, order_number):
             order.status = new_status
             order.save(update_fields=['status', 'updated_at'])
             OrderStatusHistory.objects.create(order=order, status=new_status, note=note)
+        queue_order_status_push(order)
         send_order_status_email(order, note=note)
 
     return Response(serialize_order(order, request))

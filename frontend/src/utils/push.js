@@ -38,3 +38,20 @@ export async function subscribeToPush() {
 
   return subscription;
 }
+
+/** 'unsupported' | 'denied' | 'off' | 'on' pour cet appareil. */
+export async function getPushState() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window) || !VAPID_PUBLIC_KEY) return 'unsupported';
+  if (Notification.permission === 'denied') return 'denied';
+  const registration = await navigator.serviceWorker.getRegistration('/');
+  const subscription = registration ? await registration.pushManager.getSubscription() : null;
+  return subscription && Notification.permission === 'granted' ? 'on' : 'off';
+}
+
+export async function unsubscribeFromPush() {
+  const registration = await navigator.serviceWorker.getRegistration('/');
+  const subscription = registration ? await registration.pushManager.getSubscription() : null;
+  if (!subscription) return;
+  await axiosInstance.post('/api/notifications/push-unsubscribe/', { endpoint: subscription.endpoint });
+  await subscription.unsubscribe();
+}

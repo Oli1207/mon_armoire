@@ -57,6 +57,19 @@ export default function AdminOrdersScreen() {
     <div>
       <PageHeader title="Commandes" lead={`${count} commande${count > 1 ? 's' : ''}${filter ? ` — ${ORDER_STATUS_LABELS[filter].toLowerCase()}` : ''}. Une commande payée est à préparer, puis à expédier.`} />
 
+      <details className="admin-card admin-guide">
+        <summary>À quoi servent les statuts ? (cliquez pour lire)</summary>
+        <ul className="admin-help mb-0">
+          <li><strong>En attente de paiement</strong> : la cliente a validé sa commande mais n’a pas encore payé. Ne préparez rien. Sans paiement, la commande est annulée automatiquement au bout de 24 heures et le stock est remis.</li>
+          <li><strong>Payée</strong> : l’argent est reçu. C’est une commande à préparer.</li>
+          <li><strong>En préparation</strong> : vous êtes en train d’emballer le colis.</li>
+          <li><strong>Expédiée</strong> : le colis est parti.</li>
+          <li><strong>Livrée</strong> : le colis est arrivé chez la cliente.</li>
+          <li><strong>Annulée</strong> : définitif. La carte cadeau et les points utilisés sont rendus à la cliente. Pour un remboursement en argent, faites-le depuis votre compte du service de paiement.</li>
+        </ul>
+        <p className="admin-help mt-2 mb-0"><strong>Attention :</strong> chaque changement de statut envoie un e-mail à la cliente. Choisissez donc le bon statut du premier coup. Pour changer un statut, utilisez la liste dans la colonne « Changer ». Le mot « <strong>Gravure à faire</strong> » signale une commande personnalisée : ouvrez « Détails » pour lire le texte exact.</p>
+      </details>
+
       <div className="admin-toolbar">
         <input
           type="search" className="form-control admin-search" placeholder="Chercher par numéro, e-mail ou nom"
@@ -86,7 +99,11 @@ export default function AdminOrdersScreen() {
               {orders.map((o) => (
                 <Fragment key={o.id}>
                   <tr>
-                    <td><strong>{o.order_number}</strong><div className="cell-muted">{shortDate(o.created_at)}</div></td>
+                    <td>
+                      <strong>{o.order_number}</strong>
+                      <div className="cell-muted">{shortDate(o.created_at)}</div>
+                      {o.items.some((item) => item.engraving_text) && <span className="badge badge-gold">Gravure à faire</span>}
+                    </td>
                     <td>{o.contact_email}</td>
                     <td>{fcfa(o.total)}</td>
                     <td><StatusBadge status={o.status} /></td>
@@ -127,7 +144,7 @@ export default function AdminOrdersScreen() {
                         <p className="mb-1 mt-2 cell-muted">
                           {o.delivery_method === 'pickup' ? 'Retrait en boutique' : `Livraison${o.delivery_zone ? ` (${o.delivery_zone.name})` : ''} : ${fcfa(o.shipping_cost)}`}
                         </p>
-                        {o.address && <p className="mb-0 cell-muted">À livrer à : {o.address.full_name} — {o.address.phone} — {o.address.city}, {o.address.street}</p>}
+                        {o.address && <p className="mb-0 cell-muted">À livrer à : {o.address.full_name} — {o.address.phone} — {o.address.commune ? `${o.address.commune}, ` : ''}{o.address.quartier ? `${o.address.quartier}, ` : ''}{o.address.city}, {o.address.street}</p>}
                         {o.status_history.some(isAlertNote) && (
                           <div className="alert alert-warning mt-3 mb-0">
                             {o.status_history.filter(isAlertNote).map((h) => <div key={h.created_at + h.note}>{h.note}</div>)}

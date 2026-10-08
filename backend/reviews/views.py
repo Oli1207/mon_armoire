@@ -5,6 +5,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import Throttled
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from notifications.alerts import queue_staff_alert
 
 from catalog.models import Product
 from common.pagination import StandardPagination, paginate
@@ -83,6 +84,7 @@ def product_reviews(request, slug):
     except IntegrityError:  # double envoi simultané : la contrainte unique (produit, client) fait foi
         return Response({'error': 'Vous avez déjà laissé un avis pour ce produit.'}, status=status.HTTP_400_BAD_REQUEST)
 
+    queue_staff_alert('new_review', 'reviews', 'Nouvel avis', f'{review.rating}/5 sur « {product.name} »', '/admin/avis')
     return Response(ReviewSerializer(review).data, status=status.HTTP_201_CREATED)
 
 

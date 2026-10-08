@@ -80,7 +80,7 @@ class OrderCreationTests(Base):
         response = self.client.post('/api/orders/', {
             'cart_id': str(self.cart.id), 'delivery_method': 'shipping', 'delivery_zone_id': str(self.zone.id),
             'email': 'guest@test.ci', 'full_name': 'Guest', 'phone': '0100000000',
-            'city': 'Abidjan', 'street': 'Rue 1', 'create_account': True, 'gift_card_code': 'CADEAU-INCONNU',
+            'city': 'Abidjan', 'commune': 'Cocody', 'quartier': 'Riviera', 'street': 'Rue 1', 'create_account': True, 'gift_card_code': 'CADEAU-INCONNU',
         }, format='json')
         self.assertEqual(response.status_code, 400)
         self.assertFalse(User.objects.filter(email='guest@test.ci').exists())
@@ -183,7 +183,7 @@ class PaymentIdempotencyTests(Base):
 class AdminStatusTests(Base):
     def setUp(self):
         super().setUp()
-        self.admin = User.objects.create_user(username='adm', email='adm@test.ci', password='Test-pass-123', is_staff=True)
+        self.admin = User.objects.create_user(username='adm', email='adm@test.ci', password='Test-pass-123', is_staff=True, is_superuser=True)
         self.client.force_authenticate(self.admin)
         self.add_to_cart()
         self.client.force_authenticate(self.user)

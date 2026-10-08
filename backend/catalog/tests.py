@@ -1,3 +1,4 @@
+import uuid
 from decimal import Decimal
 
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -112,7 +113,7 @@ class OrdersScalingTests(APITestCase):
 
 class AdminScalingTests(APITestCase):
     def setUp(self):
-        self.admin = User.objects.create_user(username='a', email='a@test.ci', password='Test-pass-123', is_staff=True)
+        self.admin = User.objects.create_user(username='a', email='a@test.ci', password='Test-pass-123', is_staff=True, is_superuser=True)
         self.category = Category.objects.create(name='Chaînes')
         make_products(self.category, 4)
         self.client.force_authenticate(self.admin)
@@ -319,3 +320,88 @@ class SuggestionTests(APITestCase):
         self.client.force_authenticate(user)
         response = self.client.get('/api/cart/', {'cart_id': str(cart.id)})
         self.assertEqual(response.data['items'][0]['product_slug'], product.slug)
+
+
+class EngravingTests(APITestCase):
+    PLATE = {'mode': 'plate', 'x': 0.5, 'y': 0.8, 'w': 0.3, 'h': 0.08, 'angle': -10, 'style': 'gold', 'font': 'elegant'}
+    BEADS = {'mode': 'beads', 'points': [[0.2, 0.7], [0.5, 0.78], [0.8, 0.7]], 'bead_size': 0.08, 'bead_color': 'white', 'letter_color': 'pink'}
+
+    def setUp(self):
+        self.admin = User.objects.create_user(username='a', email='a@test.ci', password='Test-pass-123', is_staff=True, is_superuser=True)
+        self.category = Category.objects.create(name='Chapelets')
+        self.product = Product.objects.create(name='Chapelet perso', category=self.category, is_personalizable=True, engraving_max_chars=10)
+        self.variant = ProductVariant.objects.create(product=self.product, price=Decimal('15000'), stock=5, is_default=True)
+        self.image = ProductImage.objects.create(product=self.product, image='products/x.jpg', is_main=True)
+
+    def save_zone(self, zone, target='image'):
+        self.client.force_authenticate(self.admin)
+        url = f'/api/admin/images/{self.image.id}/' if target == 'image' else f'/api/admin/variants/{self.variant.id}/'
+        return self.client.patch(url, {'engraving_zone': zone}, format='json')
+
+    def test_valid_zones_are_saved_cleaned_and_served_to_customers(self):
+        response = self.save_zone({**self.PLATE, 'inconnu': 'x<script>'})
+        self.assertEqual(response.status_code, 200, response.content)
+        self.image.refresh_from_db()
+        self.assertNotIn('inconnu', self.image.engraving_zone)
+        self.assertEqual(self.save_zone(self.BEADS, 'variant').status_code, 200)
+        self.client.force_authenticate(None)
+        detail = self.client.get(f'/api/products/{self.product.slug}/').data
+        self.assertEqual(detail['images'][0]['engraving_zone']['mode'], 'plate')
+        self.assertEqual(detail['variants'][0]['engraving_zone']['mode'], 'beads')
+        self.assertEqual(detail['engraving_max_chars'], 10)
+
+    def test_zone_can_be_removed(self):
+        self.save_zone(self.PLATE)
+        self.assertEqual(self.save_zone(None).status_code, 200)
+        self.image.refresh_from_db()
+        self.assertIsNone(self.image.engraving_zone)
+
+    def test_bad_zones_are_refused_with_clear_messages(self):
+        bad = [
+            {**self.PLATE, 'x': 2}, {**self.PLATE, 'w': 'NaN'}, {**self.PLATE, 'angle': 500}, {**self.PLATE, 'style': 'neon'},
+            {'mode': 'wave'}, {'mode': 'arc', 'points': [[0.1, 0.1]]}, {**self.BEADS, 'bead_size': 0.9},
+            {**self.BEADS, 'points': [[0.1, 0.1], [0.2, 0.2], ['a', 1]]}, 'texte', 42,
+        ]
+        for zone in bad:
+            response = self.save_zone(zone)
+            self.assertEqual(response.status_code, 400, zone)
+            self.assertIn('engraving_zone', response.data)
+        self.image.refresh_from_db()
+        self.assertIsNone(self.image.engraving_zone)
+
+    def test_staff_without_catalog_right_cannot_set_zones(self):
+        from userauths.models import StaffProfile
+        member = User.objects.create_user(username='m', email='m@test.ci', password='x', is_staff=True)
+        StaffProfile.objects.create(user=member, role='orders')
+        self.client.force_authenticate(member)
+        self.assertEqual(self.client.patch(f'/api/admin/images/{self.image.id}/', {'engraving_zone': self.PLATE}, format='json').status_code, 403)
+
+    def add(self, text, variant=None):
+        return self.client.post('/api/cart/add/', {'cart_id': str(uuid.uuid4()), 'variant_id': str((variant or self.variant).id), 'quantity': 1, 'engraving_text': text}, format='json')
+
+    def test_engraving_text_is_cleaned_and_limited_by_the_product(self):
+        ok = self.add('  Awa   Koffi ')
+        self.assertEqual(ok.status_code, 201, ok.content)
+        self.assertEqual(ok.data['items'][0]['engraving_text'], 'Awa Koffi')
+        too_long = self.add('Mon petit coeur')
+        self.assertEqual(too_long.status_code, 400)
+        self.assertIn('10 caractères', too_long.data['error'])
+        for bad in ('<b>A</b>', 'Awa;DROP', 'A‮B', '---', '😀😀'):
+            self.assertEqual(self.add(bad).status_code, 400, bad)
+
+    def test_engraving_is_ignored_on_a_non_personalizable_product(self):
+        other = Product.objects.create(name='Croix simple', category=self.category)
+        variant = ProductVariant.objects.create(product=other, price=Decimal('1000'), stock=5, is_default=True)
+        response = self.add('Intrus', variant)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['items'][0]['engraving_text'], '')
+
+    def test_cart_update_applies_the_same_rules(self):
+        cart_id = str(uuid.uuid4())
+        added = self.client.post('/api/cart/add/', {'cart_id': cart_id, 'variant_id': str(self.variant.id)}, format='json')
+        item_id = added.data['items'][0]['id']
+        patch = lambda text: self.client.patch(f'/api/cart/items/{item_id}/', {'cart_id': cart_id, 'engraving_text': text}, format='json')
+        self.assertEqual(patch('Awa').status_code, 200)
+        self.assertEqual(patch('Un texte beaucoup trop long').status_code, 400)
+        self.assertEqual(patch('<x>').status_code, 400)
+        self.assertEqual(patch('').data['items'][0]['engraving_text'], '')

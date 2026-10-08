@@ -24,6 +24,8 @@ urlpatterns = [
     path('api/', include('reviews.urls')),
     path('api/', include('notifications.urls')),
     path('api/', include('dashboard.urls')),
+    path('api/', include('analytics.urls')),
+    path('api/', include('common.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # L'administration Django n'est montée que si ADMIN_URL est renseignée : l'espace Admin du site suffit à la cliente,

@@ -34,6 +34,20 @@ def _take(variant_id, quantity, allow_preorder):
     return False
 
 
+LOW_STOCK = 2   # en dessous (ou égal) : « stock faible » ; 0 : rupture
+
+
+def low_stock_variants(order):
+    """Variantes de la commande dont le stock est faible ou épuisé APRÈS décrémentation (pour alerter l'équipe)."""
+    ids = set()
+    for item in order.items.select_related('coffret_configuration'):
+        if item.variant_id:
+            ids.add(item.variant_id)
+        elif item.coffret_configuration_id:
+            ids.update(variant.pk for variant, _ in _coffret_lines(item.coffret_configuration))
+    return ProductVariant.objects.filter(pk__in=ids, stock__lte=LOW_STOCK).select_related('product')
+
+
 def decrement_stock_for_order(order):
     """Décrémente le stock (appelé une fois, au passage en 'paid', dans une transaction).
 

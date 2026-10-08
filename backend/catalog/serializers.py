@@ -28,7 +28,7 @@ class CollectionSerializer(serializers.ModelSerializer):
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model  = ProductImage
-        fields = ('id', 'image', 'thumbnail', 'is_main', 'order')
+        fields = ('id', 'image', 'thumbnail', 'is_main', 'order', 'engraving_zone')
 
 
 class ProductVariantSerializer(serializers.ModelSerializer):
@@ -39,7 +39,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
         model  = ProductVariant
         fields = ('id', 'sku', 'color', 'size', 'material', 'price', 'old_price',
                   'discount_percent', 'stock', 'image', 'label', 'is_default',
-                  'allow_preorder', 'restock_note')
+                  'allow_preorder', 'restock_note', 'engraving_zone')
 
 
 # ── Liste (fiche allégée pour le catalogue) ──────────────────────────────────
@@ -83,7 +83,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Product
         fields = ('id', 'name', 'slug', 'description', 'symbolic_meaning', 'category',
-                  'collections', 'images', 'variants', 'is_new', 'is_personalizable', 'created_at')
+                  'collections', 'images', 'variants', 'is_new', 'is_personalizable', 'engraving_max_chars', 'created_at')
 
 
 # ── Guide des symboles ────────────────────────────────────────────────────────

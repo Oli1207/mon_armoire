@@ -1,8 +1,20 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from common.uploads import ValidatedImagesMixin
 
+from .engraving import validate_zone
 from .models import Category, Collection, LookbookEntry, Product, ProductImage, ProductVariant, SymbolGuideEntry, WaitlistEntry
+
+
+class EngravingZoneMixin:
+    """Valide la zone d'aperçu de gravure (voir catalog/engraving.py) : jamais de JSON libre enregistré tel quel."""
+
+    def validate_engraving_zone(self, value):
+        try:
+            return validate_zone(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages[0])
 
 
 class CategoryAdminSerializer(ValidatedImagesMixin, serializers.ModelSerializer):
@@ -19,7 +31,7 @@ class CollectionAdminSerializer(ValidatedImagesMixin, serializers.ModelSerialize
         extra_kwargs = {'slug': {'required': False}}
 
 
-class ProductVariantAdminSerializer(ValidatedImagesMixin, serializers.ModelSerializer):
+class ProductVariantAdminSerializer(EngravingZoneMixin, ValidatedImagesMixin, serializers.ModelSerializer):
     label            = serializers.ReadOnlyField()
     discount_percent = serializers.ReadOnlyField()
 
@@ -27,7 +39,7 @@ class ProductVariantAdminSerializer(ValidatedImagesMixin, serializers.ModelSeria
         model  = ProductVariant
         fields = ('id', 'product', 'sku', 'color', 'size', 'material', 'price', 'old_price',
                   'stock', 'image', 'is_default', 'label', 'discount_percent',
-                  'allow_preorder', 'restock_note')
+                  'allow_preorder', 'restock_note', 'engraving_zone')
         extra_kwargs = {'product': {'required': False}, 'sku': {'required': False}}
 
     def validate_price(self, value):
@@ -55,10 +67,10 @@ class ProductVariantAdminSerializer(ValidatedImagesMixin, serializers.ModelSeria
         return variant
 
 
-class ProductImageAdminSerializer(ValidatedImagesMixin, serializers.ModelSerializer):
+class ProductImageAdminSerializer(EngravingZoneMixin, ValidatedImagesMixin, serializers.ModelSerializer):
     class Meta:
         model  = ProductImage
-        fields = ('id', 'product', 'image', 'is_main', 'order')
+        fields = ('id', 'product', 'image', 'is_main', 'order', 'engraving_zone')
         extra_kwargs = {'product': {'required': False}}
 
 
@@ -70,7 +82,7 @@ class ProductAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Product
         fields = ('id', 'name', 'slug', 'description', 'symbolic_meaning', 'category', 'category_name',
-                  'collections', 'is_active', 'is_new', 'is_personalizable', 'created_at', 'variants', 'images')
+                  'collections', 'is_active', 'is_new', 'is_personalizable', 'engraving_max_chars', 'created_at', 'variants', 'images')
         extra_kwargs = {'slug': {'required': False}}
 
 
@@ -89,8 +101,19 @@ class LookbookEntryAdminSerializer(ValidatedImagesMixin, serializers.ModelSerial
 
 class WaitlistEntryAdminSerializer(serializers.ModelSerializer):
     product_name  = serializers.CharField(source='variant.product.name', read_only=True)
+    product_slug  = serializers.CharField(source='variant.product.slug', read_only=True)
     variant_label = serializers.CharField(source='variant.label', read_only=True)
+    in_stock      = serializers.SerializerMethodField()
+    has_push      = serializers.SerializerMethodField()
 
     class Meta:
         model  = WaitlistEntry
-        fields = ('id', 'variant', 'product_name', 'variant_label', 'email', 'name', 'notified', 'created_at')
+        fields = ('id', 'variant', 'product_name', 'product_slug', 'variant_label', 'email', 'phone', 'name', 'notified', 'push_notified',
+                  'contacted', 'contacted_at', 'in_stock', 'has_push', 'created_at')
+        read_only_fields = ('variant', 'email', 'phone', 'name', 'notified', 'push_notified', 'contacted_at')
+
+    def get_in_stock(self, entry):
+        return entry.variant.stock > 0
+
+    def get_has_push(self, entry):
+        return entry.push_subscription_id is not None

@@ -35,6 +35,10 @@ const useAuthStore = create((set, get) => ({
       Cookies.set('refresh_token', data.refresh, { secure: isSecure, sameSite: 'Strict', expires: 30 });
       const decoded = jwtDecode(data.access);
       set({ user: decoded, isAuthenticated: true, loading: false, authReady: true });
+      try {   // droits du personnel (menu Admin) : ils ne sont pas dans le jeton ; en cas d'échec on garde la connexion
+        const { data: profile } = await authAPI.me();
+        set({ user: profile });
+      } catch { /* le profil complet sera relu au prochain chargement */ }
       return { success: true };
     } catch (err) {
       set({ loading: false });

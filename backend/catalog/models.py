@@ -1,5 +1,6 @@
 import uuid
 
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.text import slugify
 
@@ -64,6 +65,7 @@ class Product(UUIDModel):
     is_active        = models.BooleanField(default=True)
     is_new           = models.BooleanField(default=False)
     is_personalizable = models.BooleanField(default=False, help_text="Permet au client d'ajouter un texte de gravure/personnalisation")
+    engraving_max_chars = models.PositiveSmallIntegerField(default=30, validators=[MinValueValidator(1), MaxValueValidator(60)], help_text="Nombre maximum de caractères de la gravure")
     created_at       = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -148,6 +150,7 @@ class ProductImage(UUIDModel):
     thumbnail = models.ImageField(upload_to='products/thumbs/', blank=True, null=True, editable=False)
     is_main = models.BooleanField(default=False)
     order   = models.PositiveSmallIntegerField(default=0)
+    engraving_zone = models.JSONField(null=True, blank=True, help_text="Zone d'aperçu de la gravure sur cette photo (voir catalog/engraving.py)")
 
     class Meta:
         ordering = ['order']
@@ -171,6 +174,7 @@ class ProductVariant(UUIDModel):
     is_default = models.BooleanField(default=False)
     allow_preorder = models.BooleanField(default=False, help_text="Autoriser la commande même en rupture de stock (précommande)")
     restock_note   = models.CharField(max_length=100, blank=True, help_text="Ex : « Retour en stock mi-décembre »")
+    engraving_zone = models.JSONField(null=True, blank=True, help_text="Zone d'aperçu de la gravure sur la photo de cette variante")
 
     class Meta:
         ordering = ['-is_default']
@@ -226,7 +230,12 @@ class WaitlistEntry(UUIDModel):
     variant    = models.ForeignKey(ProductVariant, on_delete=models.CASCADE, related_name='waitlist_entries')
     email      = models.EmailField()
     name       = models.CharField(max_length=200, blank=True)
-    notified   = models.BooleanField(default=False)
+    phone      = models.CharField(max_length=30, blank=True)
+    push_subscription = models.ForeignKey('notifications.PushSubscription', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    notified   = models.BooleanField(default=False, help_text="E-mail de retour en stock envoyé")
+    push_notified = models.BooleanField(default=False, help_text="Notification de retour en stock envoyée")
+    contacted  = models.BooleanField(default=False, help_text="Relancée à la main (WhatsApp ou appel)")
+    contacted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

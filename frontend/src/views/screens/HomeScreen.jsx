@@ -6,6 +6,7 @@ import { categoriesAPI, coffretsAPI, notificationsAPI, reviewsAPI } from '../../
 import { subscribeToPush } from '../../utils/push';
 import ReviewPhotoCarousel from '../../components/ReviewPhotoCarousel';
 import { errorText } from '../../utils/errors';
+import useSiteStore from '../../store/site';
 
 const FALLBACK_TESTIMONIALS = [
   { id: 'f1', user_name: 'Aminata K.', rating: 5, comment: 'Des bijoux de qualité et un service incroyable ! Je ne les quitte plus.', images: [] },
@@ -16,6 +17,8 @@ const FALLBACK_TESTIMONIALS = [
 const CARD_SHAPES = ['review-card--arch', 'review-card--bubble', '', 'review-card--cut'];
 
 export default function HomeScreen() {
+  const { site } = useSiteStore();
+  const heroWords = site.hero_title.split(' ').filter(Boolean);
   const [categories, setCategories] = useState([]);
   const [coffret, setCoffret] = useState(null);
   const [verse, setVerse] = useState(null);
@@ -54,15 +57,17 @@ export default function HomeScreen() {
   return (
     <div>
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="hero-section py-5" style={{ '--hero-bg-image': "url('/images/hero.webp')" }}>
+      <section className="hero-section py-5" style={{ '--hero-bg-image': `url('${site.hero_image || '/images/hero.webp'}')` }}>
         <div className="container">
           <div className="row align-items-center g-5">
             <div className="col-lg-6">
-              <p className="text-uppercase text-gold small tracking-wide mb-2">Bijoux &amp; objets chrétiens</p>
-              <h1 className="display-5 mb-3">Porte ta foi<br />avec <span className="text-gold">élégance</span></h1>
-              <p className="text-muted mb-4" style={{ maxWidth: 420 }}>
-                Des bijoux et objets chrétiens pensés pour accompagner votre foi au quotidien.
-              </p>
+              {site.hero_kicker && <p className="text-uppercase text-gold small tracking-wide mb-2">{site.hero_kicker}</p>}
+              {heroWords.length > 0 && (
+                <h1 className="display-5 mb-3">
+                  {heroWords.slice(0, -1).join(' ')}{heroWords.length > 1 ? ' ' : ''}<span className="text-gold">{heroWords.at(-1)}</span>
+                </h1>
+              )}
+              {site.hero_text && <p className="text-muted mb-4" style={{ maxWidth: '26rem' }}>{site.hero_text}</p>}
               <div className="d-flex gap-3 flex-wrap">
                 <Link to="/catalogue" className="btn btn-primary px-4 py-2 text-uppercase small tracking-wide">
                   Découvrir les bijoux

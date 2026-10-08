@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useCartStore from '../../store/cart';
 import useAuthStore from '../../store/auth';
 import { addressesAPI, deliveryZonesAPI, ordersAPI, giftcardsAPI, loyaltyAPI } from '../../utils/api';
-import { errorText } from '../../utils/errors';
+import { errorText, fieldErrors } from '../../utils/errors';
+import AddressFields, { placeComplete } from '../../components/AddressFields';
+import { track } from '../../utils/tracker';
 
 const CART_ID_KEY = 'ma_cart_id';
 
@@ -19,10 +21,10 @@ export default function CheckoutScreen() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showNewAddress, setShowNewAddress] = useState(false);
-  const [newAddress, setNewAddress] = useState({ full_name: '', phone: '', city: '', street: '' });
+  const [newAddress, setNewAddress] = useState({ full_name: '', phone: '', city: 'Abidjan', commune: '', quartier: '', street: '' });
 
   // ── Invité : coordonnées + création de compte optionnelle ──────────────────
-  const [guest, setGuest] = useState({ full_name: '', email: '', phone: '', city: '', street: '' });
+  const [guest, setGuest] = useState({ full_name: '', email: '', phone: '', city: 'Abidjan', commune: '', quartier: '', street: '' });
   const [createAccount, setCreateAccount] = useState(false);
 
   // ── Carte cadeau ─────────────────────────────────────────────────────────
@@ -53,6 +55,17 @@ export default function CheckoutScreen() {
   // ── Points de fidélité ───────────────────────────────────────────────────
   const [loyalty, setLoyalty] = useState(null);
   const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false);
+  const [addressErrors, setAddressErrors] = useState({});
+  const [savingAddress, setSavingAddress] = useState(false);
+  const checkoutTracked = useRef(false);
+
+  // Compte une seule fois l'ouverture de la page de commande avec un panier non vide
+  useEffect(() => {
+    if (cart?.items?.length && !checkoutTracked.current) {
+      checkoutTracked.current = true;
+      track('begin_checkout');
+    }
+  }, [cart]);
 
   useEffect(() => {
     fetchCart();
@@ -76,10 +89,19 @@ export default function CheckoutScreen() {
   const loyaltyDiscount = useLoyaltyPoints ? maxUsablePoints * (loyalty?.point_value || 0) : 0;
 
   const handleAddAddress = async () => {
-    const { data } = await addressesAPI.create(newAddress);
-    setAddresses((prev) => [...prev, data]);
-    setAddressId(data.id);
-    setShowNewAddress(false);
+    setAddressErrors({});
+    setSavingAddress(true);
+    try {
+      const { data } = await addressesAPI.create(newAddress);
+      setAddresses((prev) => [...prev, data]);
+      setAddressId(data.id);
+      setShowNewAddress(false);
+    } catch (err) {
+      const fields = fieldErrors(err);
+      setAddressErrors(Object.keys(fields).some((k) => k !== 'error') ? fields : { form: errorText(err, 'L’adresse n’a pas pu être enregistrée. Vérifiez les champs.') });
+    } finally {
+      setSavingAddress(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -108,6 +130,8 @@ export default function CheckoutScreen() {
         payload.create_account = createAccount;
         if (deliveryMethod === 'shipping') {
           payload.city = guest.city;
+          payload.commune = guest.commune;
+          payload.quartier = guest.quartier;
           payload.street = guest.street;
           payload.delivery_zone_id = zoneId;
         }
@@ -123,7 +147,7 @@ export default function CheckoutScreen() {
 
   const canSubmit = isAuthenticated
     ? !(deliveryMethod === 'shipping' && (!addressId || !zoneId))
-    : guest.full_name && guest.email && guest.phone && !(deliveryMethod === 'shipping' && (!guest.city || !guest.street || !zoneId));
+    : guest.full_name && guest.email && guest.phone && !(deliveryMethod === 'shipping' && (!placeComplete(guest) || !zoneId));
 
   return (
     <div>
@@ -228,7 +252,7 @@ export default function CheckoutScreen() {
                       onChange={() => setAddressId(a.id)}
                     />
                     <label className="form-check-label" htmlFor={`address-${a.id}`}>
-                      {a.full_name} — {a.city}, {a.street}
+                      {a.full_name} — {a.quartier ? `${a.quartier}, ` : ''}{a.commune || a.city}, {a.street}
                     </label>
                   </div>
                 ))}
@@ -249,20 +273,10 @@ export default function CheckoutScreen() {
                       value={newAddress.phone}
                       onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })}
                     />
-                    <input autoComplete="address-level2"
-                      className="form-control form-control-sm mb-2"
-                      placeholder="Ville"
-                      value={newAddress.city}
-                      onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
-                    />
-                    <input autoComplete="street-address"
-                      className="form-control form-control-sm mb-2"
-                      placeholder="Quartier / rue"
-                      value={newAddress.street}
-                      onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
-                    />
-                    <button className="btn btn-sm btn-primary" onClick={handleAddAddress}>
-                      Enregistrer l'adresse
+                    <AddressFields small value={newAddress} errors={addressErrors} onChange={(patch) => setNewAddress({ ...newAddress, ...patch })} />
+                    {addressErrors.form && <div className="alert alert-danger small" role="alert">{addressErrors.form}</div>}
+                    <button className="btn btn-sm btn-primary" disabled={savingAddress || !placeComplete(newAddress) || !newAddress.full_name || !newAddress.phone} onClick={handleAddAddress}>
+                      {savingAddress ? 'Enregistrement…' : 'Enregistrer l’adresse'}
                     </button>
                   </div>
                 )}
@@ -272,18 +286,7 @@ export default function CheckoutScreen() {
             {deliveryMethod === 'shipping' && !isAuthenticated && (
               <div className="card p-4 mb-4 shadow-sm">
                 <h6 className="text-uppercase small tracking-wide text-gold mb-3">Adresse de livraison</h6>
-                <input autoComplete="address-level2"
-                  className="form-control mb-2"
-                  placeholder="Ville"
-                  value={guest.city}
-                  onChange={(e) => setGuest({ ...guest, city: e.target.value })}
-                />
-                <input autoComplete="street-address"
-                  className="form-control mb-2"
-                  placeholder="Quartier / rue"
-                  value={guest.street}
-                  onChange={(e) => setGuest({ ...guest, street: e.target.value })}
-                />
+                <AddressFields value={guest} onChange={(patch) => setGuest({ ...guest, ...patch })} />
               </div>
             )}
 

@@ -6,6 +6,7 @@ import { useDebounced } from '../../utils/usePaginated';
 import { errorText } from '../../utils/errors';
 import Suggestions from '../../components/Suggestions';
 import DetailSkeleton from '../../components/DetailSkeleton';
+import { track } from '../../utils/tracker';
 
 export default function CoffretConfiguratorScreen() {
   const { slug } = useParams();
@@ -119,6 +120,7 @@ export default function CoffretConfiguratorScreen() {
       };
       const { data: configuration } = await coffretsAPI.configure(payload);
       await addCoffretConfiguration(configuration.id);
+      track('add_to_cart', { ref: `coffret:${coffret.slug}`, v: computeTotal() });
       navigate('/panier');
     } catch (err) {
       setError(errorText(err, 'Le coffret n’a pas pu être enregistré. Vérifiez vos choix puis réessayez.'));

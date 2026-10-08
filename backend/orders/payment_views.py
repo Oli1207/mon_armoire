@@ -92,7 +92,7 @@ def payment_initiate(request, order_number):
 
     try:
         result = paystack_client.initialize(
-            email=contact_email or 'client@monarmoire.com', amount_cfa=amount, reference=reference,
+            email=contact_email or 'client@monarmoire.store', amount_cfa=amount, reference=reference,
             callback_url=callback_url, metadata={'order_number': order.order_number},
         )
     except paystack_client.PaystackError as exc:

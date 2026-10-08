@@ -1,4 +1,4 @@
-# Site vitrine React (monarmoire.com) — copié tel quel dans dist/ par `npm run build`
+# Site vitrine React (monarmoire.store) — copié tel quel dans dist/ par `npm run build`
 Options -Indexes
 
 <IfModule mod_rewrite.c>
@@ -21,8 +21,8 @@ Options -Indexes
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
   Header always set Strict-Transport-Security "max-age=31536000"
-  # connect-src/img-src : adapter le domaine de l'API si différent de backend.monarmoire.com
-  Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: ; connect-src 'self' https://backend.monarmoire.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+  # connect-src/img-src : adapter le domaine de l'API si différent de backend.monarmoire.store
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: ; connect-src 'self' https://backend.monarmoire.store; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 
   # Fichiers hachés par Vite (assets/) : cache longue durée. Autres images : 1 jour.
   # index.html, service worker et manifeste : toujours revalidés.

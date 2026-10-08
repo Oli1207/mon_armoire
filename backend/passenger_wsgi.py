@@ -1,5 +1,5 @@
 """
-Point d'entrée Phusion Passenger — backend.monarmoire.com
+Point d'entrée Phusion Passenger — backend.monarmoire.store
 ===========================================================
 - Chemin dynamique via __file__ (pas de login hardcodé)
 - Si Django ne démarre pas, le détail de l'erreur est écrit dans logs/startup_error.log

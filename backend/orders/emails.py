@@ -67,7 +67,7 @@ def send_order_status_email(order, note=''):
     message = (
         f"Votre commande {order.order_number} est maintenant {label}.\n\n"
         + (f"{note}\n\n" if note else "")
-        + f"Suivez votre commande à tout moment sur monarmoire.com avec le numéro {order.order_number}."
+        + f"Suivez votre commande à tout moment sur monarmoire.store avec le numéro {order.order_number}."
     )
     send_mail(
         subject=f"Commande {order.order_number} — mise à jour",
@@ -95,7 +95,7 @@ def send_giftcard_email(gift_card):
         f"Code : {gift_card.code}",
         f"Valeur : {gift_card.initial_value} FCFA",
         "",
-        "À utiliser en une ou plusieurs fois au moment du paiement, sur monarmoire.com.",
+        "À utiliser en une ou plusieurs fois au moment du paiement, sur monarmoire.store.",
     ]
 
     send_mail(

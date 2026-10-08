@@ -7,7 +7,7 @@
 # afin que le mot de passe n'apparaisse jamais dans la liste des processus ni dans le cron.
 set -euo pipefail
 
-APP_DIR="${APP_DIR:-$HOME/monarmoire/backend}"
+APP_DIR="${APP_DIR:-$HOME/mon_armoire/backend}"
 BACKUP_DIR="${BACKUP_DIR:-$HOME/backups/monarmoire}"
 KEEP_DAYS="${KEEP_DAYS:-14}"
 ENV_FILE="$APP_DIR/.env"

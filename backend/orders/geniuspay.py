@@ -33,7 +33,7 @@ def _headers() -> Dict[str, str]:
         "X-API-Secret": secret_key,
         "Content-Type": "application/json",
         "Accept":       "application/json",
-        "User-Agent":   "MonArmoire/1.0 (+https://monarmoire.com)",
+        "User-Agent":   "MonArmoire/1.0 (+https://monarmoire.store)",
     }
 
 
@@ -79,7 +79,7 @@ def create_payment(
         "customer": {
             "name":  customer_name or "Client",
             "phone": customer_phone or "",
-            "email": customer_email or "client@monarmoire.com",
+            "email": customer_email or "client@monarmoire.store",
         },
         "success_url": success_url,
         "error_url":   error_url,

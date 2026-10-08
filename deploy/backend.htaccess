@@ -1,9 +1,9 @@
-# À créer dans /home/VOTRE_LOGIN/public_html/backend/.htaccess (dossier public du sous-domaine backend.monarmoire.com)
+# À créer dans /home/VOTRE_LOGIN/public_html/backend/.htaccess (dossier public du sous-domaine backend.monarmoire.store)
 # Même schéma que celui qui fonctionne pour EthniSpirit sur LWS. Remplacer VOTRE_LOGIN (3 endroits).
 PassengerEnabled on
 PassengerBaseURI /
-PassengerAppRoot /home/VOTRE_LOGIN/monarmoire/backend
-PassengerPython /home/VOTRE_LOGIN/virtualenvs/monarmoire/bin/python3
+PassengerAppRoot /home/VOTRE_LOGIN/mon_armoire/backend
+PassengerPython /home/VOTRE_LOGIN/virtualenv/mon_armoire/backend/3.12/bin/python3
 
 # Le .htaccess du site (dossier parent) renvoie toute URL inconnue vers index.html : on neutralise ces règles ici,
 # sinon elles pourraient intercepter les appels à l'API.

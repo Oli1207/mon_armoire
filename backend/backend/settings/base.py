@@ -217,13 +217,13 @@ LOGGING = {
 
 # ── Email ─────────────────────────────────────────────────────────────────────
 EMAIL_BACKEND       = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST          = env.str('EMAIL_HOST',          default='mail.monarmoire.com')
+EMAIL_HOST          = env.str('EMAIL_HOST',          default='mail.monarmoire.store')
 EMAIL_PORT          = env.int('EMAIL_PORT',          default=465)
 EMAIL_USE_SSL       = env.bool('EMAIL_USE_SSL',      default=True)
 EMAIL_USE_TLS       = env.bool('EMAIL_USE_TLS',      default=False)
 EMAIL_HOST_USER     = env.str('EMAIL_HOST_USER',     default='')
 EMAIL_HOST_PASSWORD = env.str('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL  = 'contact@monarmoire.com'
+DEFAULT_FROM_EMAIL  = 'contact@monarmoire.store'
 EMAIL_TIMEOUT       = 10
 EMAIL_USE_LOCALTIME = True
 
@@ -234,7 +234,7 @@ _vapid_key_file = env.str('VAPID_PRIVATE_KEY_FILE', default='vapid_private.pem')
 VAPID_PRIVATE_KEY = str(BASE_DIR / _vapid_key_file)
 
 VAPID_CLAIMS = {
-    'sub': f'mailto:{env.str("VAPID_CONTACT_EMAIL", default="contact@monarmoire.com")}',
+    'sub': f'mailto:{env.str("VAPID_CONTACT_EMAIL", default="contact@monarmoire.store")}',
 }
 
 # ── Paiement — GeniusPay (mobile money CI) + Paystack (carte bancaire) ───────

@@ -8,19 +8,19 @@ if len(SECRET_KEY) < 50 or SECRET_KEY.startswith('django-insecure') or 'change-m
     raise RuntimeError("SECRET_KEY trop faible ou d'exemple : définissez une clé aléatoire de 50 caractères minimum dans .env.")
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[
-    'monarmoire.com',
-    'www.monarmoire.com',
-    'backend.monarmoire.com',
+    'monarmoire.store',
+    'www.monarmoire.store',
+    'backend.monarmoire.store',
 ])
 
 CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[
-    'https://monarmoire.com',
-    'https://www.monarmoire.com',
+    'https://monarmoire.store',
+    'https://www.monarmoire.store',
 ])
 CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[
-    'https://monarmoire.com',
-    'https://www.monarmoire.com',
-    'https://backend.monarmoire.com',
+    'https://monarmoire.store',
+    'https://www.monarmoire.store',
+    'https://backend.monarmoire.store',
 ])
 
 # L'API s'authentifie par jeton Bearer, pas par cookie : pas besoin d'envoyer les cookies en cross-origin.
@@ -48,10 +48,10 @@ SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SECURE      = True
 
 # Médias servis par Apache depuis le dossier public du site principal (MEDIA_ROOT=/home/<login>/public_html/media) :
-# URL absolue, car l'API (backend.monarmoire.com) et le site (monarmoire.com) sont deux domaines.
-MEDIA_URL = env.str('MEDIA_URL', default='https://monarmoire.com/media/')
+# URL absolue, car l'API (backend.monarmoire.store) et le site (monarmoire.store) sont deux domaines.
+MEDIA_URL = env.str('MEDIA_URL', default='https://monarmoire.store/media/')
 
 # ── Fichiers statiques : servis par WhiteNoise (admin Django) ────────────────
 STATICFILES_DIRS = []
 
-CONTACT_RECIPIENT = 'contact@monarmoire.com'
+CONTACT_RECIPIENT = 'contact@monarmoire.store'

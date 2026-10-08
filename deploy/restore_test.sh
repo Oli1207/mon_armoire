@@ -6,7 +6,7 @@
 set -euo pipefail
 
 BACKUP="${1:?Indiquer le fichier de sauvegarde (.sql.gz)}"
-APP_DIR="${APP_DIR:-$HOME/monarmoire/backend}"
+APP_DIR="${APP_DIR:-$HOME/mon_armoire/backend}"
 read_env() { grep -E "^$1=" "$APP_DIR/.env" | head -1 | cut -d= -f2- | tr -d '"' | tr -d "'" ; }
 DB_USER="$(read_env DB_USER)"; DB_HOST="$(read_env DB_HOST)"; DB_PORT="$(read_env DB_PORT)"
 DB_HOST="${DB_HOST:-localhost}"; DB_PORT="${DB_PORT:-5432}"

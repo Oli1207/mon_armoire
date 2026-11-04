@@ -13,7 +13,7 @@ KEEP_DAYS="${KEEP_DAYS:-14}"
 ENV_FILE="$APP_DIR/.env"
 
 # Lecture des seuls réglages utiles du .env (jamais de « source » : le fichier contient des secrets arbitraires)
-read_env() { grep -E "^$1=" "$ENV_FILE" | head -1 | cut -d= -f2- | tr -d '"' | tr -d "'" ; }
+read_env() { grep -E "^$1=" "$ENV_FILE" | head -1 | cut -d= -f2- | tr -d '"\r' | tr -d "'" ; }
 DB_NAME="$(read_env DB_NAME)"; DB_USER="$(read_env DB_USER)"
 DB_HOST="$(read_env DB_HOST)"; DB_PORT="$(read_env DB_PORT)"
 MEDIA_ROOT="$(read_env MEDIA_ROOT)"

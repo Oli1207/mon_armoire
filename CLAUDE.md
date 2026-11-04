@@ -49,7 +49,7 @@ Avant de décider d'un réglage d'hébergement, regarder comment EthniSpirit l'a
 - API en JSON uniquement (`JSONOnlyNegotiation`), erreurs 404/500 en JSON, jamais de traceback au public (`passenger_wsgi.py` écrit dans `logs/startup_error.log`).
 - Démarrage refusé si `SECRET_KEY` faible/d'exemple. HSTS sans `includeSubdomains`/preload par défaut. Médias servis par Apache (`deploy/media.htaccess`), statique par WhiteNoise, SPA et en-têtes de sécurité via `frontend/public/.htaccess`.
 - Cache et limites de débit en **fichiers** (`FileBasedCache`, dossier `cache/` hors zone publique) : un cache en base ajoutait ~10 requêtes SQL à chaque appel API (limites de débit). Journaux tournants dans `logs/`. Refresh token 30 jours, révoqué après réinitialisation du mot de passe ; jeton de réinitialisation stocké haché.
-- Avant chaque déploiement : `pip-audit -r requirements.txt` (seules les 8 CVE Django 5.1 documentées plus haut sont tolérées), `manage.py test`, `check --deploy` (seuls W005/W021 volontaires acceptés).
+- Avant chaque déploiement : `pip-audit -r requirements.txt` (seules sont tolérées les 8 CVE Django 5.1 documentées plus haut et les 3 de DRF 3.17.2, DRF 3.18 exigeant Django 5.2 : CVE-2026-114136 bloquée par `common/middleware.py`, CVE-2026-114138 sans effet car `JSONOnlyNegotiation` n'analyse pas `Accept`, CVE-2026-114137 sans objet car `rest_framework.authtoken` n'est pas installé), `manage.py test`, `check --deploy` (seuls W005/W021 volontaires acceptés).
 
 ## Scalabilité (visée : des millions d'utilisateurs)
 

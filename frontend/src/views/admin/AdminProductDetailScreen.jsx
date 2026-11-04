@@ -4,7 +4,8 @@ import { adminAPI } from '../../utils/api';
 import ListStatus from '../../components/ListStatus';
 import { useAdminUi } from './ui/AdminUi';
 import EngravingEditor from './ui/EngravingEditor';
-import { Field, MAX_IMAGE_MB, PageHeader, errorText } from './ui/parts';
+import { Field, IMAGE_ACCEPT, MAX_IMAGE_MB, PageHeader, errorText } from './ui/parts';
+import { prepareImage } from '../../utils/prepareImage';
 
 const EMPTY_VARIANT = { color: '', size: '', material: '', price: '', stock: '' };
 
@@ -51,7 +52,7 @@ function VariantCard({ variant, onSave, onRemove, onPhoto, personalizable, onEng
         {variant.image && <img className="admin-thumb" src={variant.image} alt="" />}
         <label className="file-drop mb-0" style={{ position: 'relative' }}>
           {variant.image ? 'Changer la photo de cette variante' : 'Ajouter une photo propre à cette variante (facultatif)'}
-          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onPhoto(variant.id, f); }} />
+          <input type="file" accept={IMAGE_ACCEPT} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onPhoto(variant.id, f); }} />
         </label>
         {personalizable && variant.image && (
           <button type="button" className="btn btn-outline-primary btn-sm" onClick={() => onEngrave(variant)}>
@@ -119,7 +120,8 @@ export default function AdminProductDetailScreen() {
     if (ok) setNewVariant(EMPTY_VARIANT);
   };
 
-  const uploadVariantPhoto = async (variantId, file) => {
+  const uploadVariantPhoto = async (variantId, picked) => {
+    const file = await prepareImage(picked);
     if (file.size > MAX_IMAGE_MB * 1024 * 1024) { notify(`Photo trop lourde (maximum ${MAX_IMAGE_MB} Mo).`, 'error'); return; }
     const data = new FormData();
     data.append('image', file);
@@ -129,17 +131,23 @@ export default function AdminProductDetailScreen() {
   const uploadPhotos = async (event) => {
     const files = Array.from(event.target.files || []);
     event.target.value = '';
+    let added = 0;
     for (let i = 0; i < files.length; i += 1) {
-      const file = files[i];
-      if (file.size > MAX_IMAGE_MB * 1024 * 1024) { notify(`« ${file.name} » est trop lourde (maximum ${MAX_IMAGE_MB} Mo).`, 'error'); continue; }
       setUploading(`Envoi de la photo ${i + 1} sur ${files.length}…`);
+      const file = await prepareImage(files[i]);
+      if (file.size > MAX_IMAGE_MB * 1024 * 1024) { notify(`« ${files[i].name} » est trop lourde (maximum ${MAX_IMAGE_MB} Mo).`, 'error'); continue; }
       const data = new FormData();
       data.append('image', file);
-      data.append('is_main', product.images.length === 0 && i === 0 ? 'true' : 'false');
-      try { await adminAPI.createImage(id, data); } catch (err) { notify(errorText(err), 'error'); }
+      data.append('is_main', product.images.length + added === 0 ? 'true' : 'false');
+      try {
+        await adminAPI.createImage(id, data);
+        added += 1;
+      } catch (err) {
+        notify(`« ${files[i].name} » : ${errorText(err)}`, 'error');
+      }
     }
     setUploading('');
-    if (files.length) { notify(files.length > 1 ? 'Photos ajoutées.' : 'Photo ajoutée.'); load(); }
+    if (added) { notify(added > 1 ? `${added} photos ajoutées.` : 'Photo ajoutée.'); load(); }
   };
 
   const removePhoto = async (image) => {
@@ -261,9 +269,9 @@ export default function AdminProductDetailScreen() {
         </div>
         <label className="file-drop mb-0" style={{ position: 'relative' }}>
           {uploading || '+ Ajouter des photos (JPEG, PNG ou WebP — plusieurs à la fois possible)'}
-          <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={uploadPhotos} disabled={Boolean(uploading)} />
+          <input type="file" accept={IMAGE_ACCEPT} multiple onChange={uploadPhotos} disabled={Boolean(uploading)} />
         </label>
-        <p className="admin-card-note">Photos réduites automatiquement pour que le site reste rapide. Maximum {MAX_IMAGE_MB} Mo par photo.</p>
+        <p className="admin-card-note">Toutes les photos sont acceptées : le site les réduit automatiquement pour rester rapide.</p>
       </section>
 
       {engraving && (

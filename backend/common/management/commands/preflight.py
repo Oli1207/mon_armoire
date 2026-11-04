@@ -1,4 +1,5 @@
 """Contrôle de mise en ligne : `python manage.py preflight` (à lancer sur le serveur LWS après chaque déploiement)."""
+import io
 import os
 import tempfile
 from pathlib import Path
@@ -6,10 +7,14 @@ from urllib.parse import urlparse
 
 from django.conf import settings
 from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.mail import send_mail
 from django.core.management.base import BaseCommand
 from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
+from PIL import Image
+
+from common.uploads import clean_admin_image
 
 OK, WARN, FAIL = 'ok', 'warn', 'fail'
 MIN_PG_VERSION = 130000  # PostgreSQL 13 (version de LWS) ; Django 5.1 : PG 13 minimum
@@ -22,6 +27,19 @@ def _writable(directory):
             pass
         return True
     except OSError:
+        return False
+
+
+def _photo_format_works(image_format):
+    """Le serveur sait-il lire ce format puis produire le WebP du site ? (dépend du Pillow installé)"""
+    try:
+        buffer = io.BytesIO()
+        Image.new('RGB', (32, 32)).save(buffer, image_format)
+        cleaned = clean_admin_image(SimpleUploadedFile(f'test.{image_format.lower()}', buffer.getvalue()))
+        with Image.open(cleaned) as image:
+            image.convert('RGB').save(io.BytesIO(), 'WEBP')
+        return True
+    except Exception:
         return False
 
 
@@ -63,6 +81,12 @@ def run_checks():
     except Exception as exc:  # noqa: BLE001
         add(FAIL, f'cache inutilisable : {exc}')
     add(OK if _writable(settings.MEDIA_ROOT) else FAIL, f'MEDIA_ROOT accessible en écriture ({settings.MEDIA_ROOT})')
+    for image_format in ('JPEG', 'PNG', 'WEBP'):
+        works = _photo_format_works(image_format)
+        add(OK if works else FAIL, f'Photos {image_format} lues et converties' if works else f'Photos {image_format} illisibles sur ce serveur (Pillow)')
+    for image_format in ('HEIF', 'AVIF'):
+        works = _photo_format_works(image_format)
+        add(OK if works else WARN, f'Photos {image_format} lues et converties' if works else f'Photos {image_format} refusées : vérifier pip install -r requirements.txt')
     absolute_media = urlparse(settings.MEDIA_URL).scheme == 'https'
     add(OK if absolute_media else FAIL, f'MEDIA_URL absolue en HTTPS ({settings.MEDIA_URL})')
     add(OK if _writable(settings.LOG_DIR) else FAIL, f'LOG_DIR accessible en écriture ({settings.LOG_DIR})')

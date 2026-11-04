@@ -15,18 +15,32 @@ THUMB_SIDE = 720    # miniature (catalogue, panier, accueil) : assez large pour 
 REVIEW_SIDE = 1000  # photos d'avis
 QUALITY = 82
 
-Image.MAX_IMAGE_PIXELS = 50_000_000  # garde-fou « bombe de décompression » (Pillow refuse au-delà de 2x)
+MAX_READABLE_PIXELS = 120_000_000  # capteurs de téléphone jusqu'à 108 Mpx
+Image.MAX_IMAGE_PIXELS = MAX_READABLE_PIXELS  # garde-fou « bombe de décompression » (Pillow refuse au-delà de 2x)
+
+try:  # photos iPhone (.heic) ; le site fonctionne sans, seul ce format est alors refusé
+    from pillow_heif import register_heif_opener
+    register_heif_opener()
+    HEIF_SUPPORTED = True
+except ImportError:
+    HEIF_SUPPORTED = False
 
 
 def _open(source):
     if hasattr(source, 'seek'):
         source.seek(0)
     img = Image.open(source)
+    img.draft('RGB', (FULL_SIDE * 2, FULL_SIDE * 2))  # JPEG : décodage réduit, une photo de 100 Mpx tient en mémoire sur le mutualisé
     img.load()
     img = ImageOps.exif_transpose(img)
     if img.mode not in ('RGB', 'RGBA'):
         img = img.convert('RGBA' if 'A' in img.mode or 'transparency' in img.info else 'RGB')
     return img
+
+
+def open_for_processing(source):
+    """Décode réellement la photo (lève une exception si elle est abîmée), redressée et en RGB/RGBA."""
+    return _open(source)
 
 
 def _webp(img, max_side, quality=QUALITY):

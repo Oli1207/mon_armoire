@@ -133,8 +133,9 @@ const PROBLEMS = [
   {
     title: 'Une photo est refusée',
     steps: [
-      'Formats acceptés : JPEG, PNG ou WebP, 15 Mo au maximum par photo.',
-      'Une photo de téléphone est acceptée : le site la réduit automatiquement pour rester rapide.',
+      'Toutes les photos sont acceptées (téléphone, iPhone, captures d’écran, images enregistrées depuis internet) : le site les réduit automatiquement pour rester rapide.',
+      'Une vidéo ou un PDF ne peut pas servir de photo : faites une capture d’écran et envoyez-la.',
+      'Le message rouge explique la raison. Si la photo reste refusée, envoyez une capture d’écran de cette photo.',
     ],
   },
   {

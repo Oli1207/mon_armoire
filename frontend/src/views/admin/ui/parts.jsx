@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
+import { prepareImage } from '../../../utils/prepareImage';
 
-export const MAX_IMAGE_MB = 15;
+export const MAX_IMAGE_MB = 25;
+// Les extensions : sous Windows, « image/* » seul masque souvent les photos iPhone
+export const IMAGE_ACCEPT = 'image/*,.heic,.heif,.avif,.tif,.tiff,.jfif';
 
 export const ORDER_STATUS_LABELS = {
   pending: 'En attente de paiement', paid: 'Payée', processing: 'En préparation',
@@ -51,10 +54,11 @@ export function ImageField({ label = 'Photo', value, file, onChange, onProblem, 
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
-  const handle = (event) => {
-    const chosen = event.target.files?.[0];
+  const handle = async (event) => {
+    const picked = event.target.files?.[0];
     event.target.value = '';
-    if (!chosen) return;
+    if (!picked) return;
+    const chosen = await prepareImage(picked);
     if (chosen.size > MAX_IMAGE_MB * 1024 * 1024) {
       onProblem?.(`Cette photo est trop lourde (maximum ${MAX_IMAGE_MB} Mo).`);
       return;
@@ -64,12 +68,12 @@ export function ImageField({ label = 'Photo', value, file, onChange, onProblem, 
 
   const shown = preview || value;
   return (
-    <Field label={label} help={help || 'Formats JPEG, PNG ou WebP.'} error={error}>
+    <Field label={label} help={help || 'Toutes les photos sont acceptées : le site les adapte automatiquement.'} error={error}>
       <div className="d-flex align-items-center gap-3 flex-wrap">
         {shown ? <img src={shown} alt="" className="admin-image-preview" /> : <span className="admin-image-preview" aria-hidden="true" />}
         <label className="admin-file-drop mb-0 flex-grow-1" style={{ position: 'relative', minWidth: '12rem' }}>
           {shown ? 'Changer la photo' : 'Choisir une photo'}
-          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handle} />
+          <input type="file" accept={IMAGE_ACCEPT} onChange={handle} />
         </label>
       </div>
     </Field>

@@ -215,6 +215,7 @@ LOGGING = {
     'loggers': {
         'django.request': {'handlers': ['file', 'console'], 'level': 'ERROR', 'propagate': False},
         'orders':         {'handlers': ['file', 'console'], 'level': 'INFO',  'propagate': False},
+        'common.uploads': {'handlers': ['file', 'console'], 'level': 'WARNING', 'propagate': False},
     },
 }
 

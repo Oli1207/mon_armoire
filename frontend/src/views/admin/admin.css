@@ -330,7 +330,7 @@
   font-size: 0.9rem;
 }
 .admin-file-drop:hover, .admin-file-drop:focus-within { border-color: var(--ma-brown); color: var(--ma-brown); }
-.admin-file-drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.admin-file-drop input { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; opacity: 0; cursor: pointer; font-size: 0; }
 .admin-image-preview { width: 7rem; height: 7rem; object-fit: cover; border-radius: 4px; border: 1px solid #e5ddd0; background: var(--ma-bg); }
 
 /* ── Variantes (cartes plutôt qu'un tableau : lisibles sur mobile) ───────── */

@@ -181,7 +181,7 @@ export default function Navbar() {
                   Déconnexion
                 </button>
               ) : (
-                <div className="d-flex gap-2">
+                <div className="d-flex gap-2 justify-content-end flex-wrap">
                   <Link to="/login" className="btn btn-outline-primary btn-sm text-uppercase small tracking-wide" onClick={() => setMenuOpen(false)}>
                     Connexion
                   </Link>

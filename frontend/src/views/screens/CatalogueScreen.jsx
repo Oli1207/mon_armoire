@@ -7,6 +7,7 @@ import useAuthStore from '../../store/auth';
 import { useLoadMore } from '../../utils/usePaginated';
 import { StarRating } from '../../components/Stars';
 import { track } from '../../utils/tracker';
+import priceLabel from '../../utils/productPrice';
 
 export default function CatalogueScreen() {
   const { isAuthenticated } = useAuthStore();
@@ -156,7 +157,7 @@ export default function CatalogueScreen() {
                       </div>
                     )}
                     <p className="mb-0 fw-semibold text-gold">
-                      {p.price ? `${Number(p.price).toLocaleString('fr-FR')} FCFA` : '—'}
+                      {priceLabel(p) || '—'}
                     </p>
                     <div className="mt-1">
                       {p.is_new && <span className="badge badge-gold me-1">Nouveauté</span>}

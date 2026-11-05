@@ -28,6 +28,8 @@ export default function ProductDetailScreen() {
   const [linkCopied, setLinkCopied] = useState(false);
   const [activeImage, setActiveImage] = useState(null);
   const [engravingText, setEngravingText] = useState('');
+  const [engravingBack, setEngravingBack] = useState('');
+  const [engravingErrors, setEngravingErrors] = useState({});
 
   const loadProduct = useCallback(() => {
     setLoadError(null);
@@ -95,6 +97,8 @@ export default function ProductDetailScreen() {
     : (variant?.image ? variant : product.images[0]);
   const engravingZone = shownImage?.engraving_zone || null;
   const engravingLimit = product.engraving_max_chars || 30;
+  const engravingSides = variant?.engraving_sides || 0; // chaque version a sa gravure, comprise dans son prix
+  const pricesDiffer = new Set(product.variants.map((v) => Number(v.price))).size > 1;
 
   return (
     <div className="container py-5">
@@ -120,7 +124,7 @@ export default function ProductDetailScreen() {
                   backgroundSize: 'cover', backgroundPosition: 'center',
                 }}
               />
-              {product.is_personalizable && <EngravingPreview zone={engravingZone} text={engravingText} />}
+              {engravingSides > 0 && <EngravingPreview zone={engravingZone} text={engravingText} />}
             </div>
           ) : (
             <div className="bg-white d-flex align-items-center justify-content-center text-muted" style={{ aspectRatio: '1/1' }}>
@@ -176,15 +180,18 @@ export default function ProductDetailScreen() {
 
           {product.variants.length > 1 && (
             <div className="mb-3">
-              <label className="form-label d-block text-uppercase small tracking-wide">Variante</label>
+              <p className="form-label d-block text-uppercase small tracking-wide mb-2">Choisissez</p>
               <div className="d-flex gap-2 flex-wrap">
                 {product.variants.map((v) => (
                   <button
                     key={v.id}
-                    className={`btn btn-sm ${variant?.id === v.id ? 'btn-primary' : 'btn-outline-primary'}`}
-                    onClick={() => { setVariant(v); setActiveImage(null); }}
+                    type="button"
+                    className={`btn d-flex flex-column align-items-center justify-content-center ${variant?.id === v.id ? 'btn-primary' : 'btn-outline-primary'}`}
+                    aria-pressed={variant?.id === v.id}
+                    onClick={() => { setVariant(v); setActiveImage(null); setEngravingErrors({}); }}
                   >
                     {v.label}
+                    {pricesDiffer && <span className="d-block small">{Number(v.price).toLocaleString('fr-FR')} FCFA</span>}
                   </button>
                 ))}
               </div>
@@ -200,22 +207,44 @@ export default function ProductDetailScreen() {
             </div>
           )}
 
-          {product.is_personalizable && (
+          {engravingSides > 0 && (
             <div className="mt-4">
-              <label className="form-label d-block text-uppercase small tracking-wide">
-                Texte de gravure (facultatif)
+              <label htmlFor="engraving-front" className="form-label d-block text-uppercase small tracking-wide">
+                {engravingSides === 2 ? 'Texte à graver au recto' : 'Texte à graver'}
               </label>
               <input
-                className="form-control"
+                id="engraving-front"
+                className={`form-control ${engravingErrors.front ? 'is-invalid' : ''}`}
                 maxLength={engravingLimit}
                 placeholder="Ex : Un prénom, une date, une courte phrase..."
                 autoComplete="off"
                 aria-describedby="engraving-help"
+                aria-invalid={Boolean(engravingErrors.front)}
                 value={engravingText}
-                onChange={(e) => setEngravingText(e.target.value)}
+                onChange={(e) => { setEngravingText(e.target.value); setEngravingErrors({}); }}
               />
+              {engravingErrors.front && <div className="invalid-feedback d-block">{engravingErrors.front}</div>}
+              {engravingSides === 2 && (
+                <>
+                  <label htmlFor="engraving-back" className="form-label d-block text-uppercase small tracking-wide mt-3">
+                    Texte à graver au verso
+                  </label>
+                  <input
+                    id="engraving-back"
+                    className={`form-control ${engravingErrors.back ? 'is-invalid' : ''}`}
+                    maxLength={engravingLimit}
+                    placeholder="Ex : Un prénom, une date, une courte phrase..."
+                    autoComplete="off"
+                    aria-describedby="engraving-help"
+                    aria-invalid={Boolean(engravingErrors.back)}
+                    value={engravingBack}
+                    onChange={(e) => { setEngravingBack(e.target.value); setEngravingErrors({}); }}
+                  />
+                  {engravingErrors.back && <div className="invalid-feedback d-block">{engravingErrors.back}</div>}
+                </>
+              )}
               <p id="engraving-help" className="form-text small text-muted mb-0">
-                {engravingText.length}/{engravingLimit} caractères (lettres, chiffres, espace, apostrophe, point, tiret).{' '}
+                {engravingLimit} caractères au maximum par face (lettres, chiffres, espace, apostrophe, point, tiret).{' '}
                 {engravingText.trim() && !engravingZone
                   ? 'Pas d’aperçu sur cette photo : votre texte sera gravé comme demandé.'
                   : 'Aperçu indicatif — le rendu final peut légèrement varier selon le bijou.'}
@@ -242,9 +271,21 @@ export default function ProductDetailScreen() {
                 disabled={!variant || adding}
                 onClick={async () => {
                   setAddError('');
+                  const missing = {};
+                  if (engravingSides > 0 && !engravingText.trim()) missing.front = engravingSides === 2 ? 'Indiquez le texte à graver au recto.' : 'Indiquez le texte à graver.';
+                  if (engravingSides === 2 && !engravingBack.trim()) missing.back = 'Indiquez le texte à graver au verso.';
+                  setEngravingErrors(missing);
+                  if (Object.keys(missing).length) {
+                    document.getElementById(missing.front ? 'engraving-front' : 'engraving-back')?.focus();
+                    return;
+                  }
                   setAdding(true);
                   try {
-                    await addVariant(variant.id, 1, false, '', engravingText.trim());
+                    await addVariant(
+                      variant.id, 1, false, '',
+                      engravingSides > 0 ? engravingText.trim() : '',
+                      engravingSides === 2 ? engravingBack.trim() : '',
+                    );
                     track('add_to_cart', { p: product.slug, v: variant.price });
                     navigate('/panier');
                   } catch (err) {

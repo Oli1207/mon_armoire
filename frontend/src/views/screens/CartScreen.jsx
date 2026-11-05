@@ -58,7 +58,7 @@ export default function CartScreen() {
                     <strong>
                       {item.product_name || `Coffret personnalisé — ${item.coffret_configuration.coffret.name}`}
                     </strong>
-                    {item.variant && <div className="text-muted small">{item.variant.label}</div>}
+                    {item.variant && item.variant.label !== 'Standard' && <div className="text-muted small">{item.variant.label}</div>}
                     <div className="form-check mt-1">
                       <input
                         className="form-check-input"
@@ -71,21 +71,25 @@ export default function CartScreen() {
                         Emballage cadeau
                       </label>
                     </div>
-                    {item.variant && (
-                      <input
-                        className="form-control form-control-sm mt-1"
-                        style={{ maxWidth: '16rem' }}
-                        placeholder="Texte de gravure (facultatif)"
-                        aria-label="Texte de gravure"
-                        maxLength={60}
-                        defaultValue={item.engraving_text}
-                        onBlur={(e) => {
-                          if (e.target.value !== item.engraving_text) {
-                            change(() => updateItem(item.id, { engraving_text: e.target.value }));
-                          }
-                        }}
-                      />
-                    )}
+                    {[['engraving_text', item.engraving_sides === 2 ? 'Texte à graver au recto' : 'Texte à graver', 1], ['engraving_text_back', 'Texte à graver au verso', 2]]
+                      .filter(([, , sides]) => item.engraving_sides >= sides)
+                      .map(([field, label]) => (
+                        <input
+                          key={field}
+                          className="form-control mt-1"
+                          style={{ maxWidth: '16rem' }}
+                          placeholder={label}
+                          aria-label={label}
+                          autoComplete="off"
+                          maxLength={item.engraving_max_chars || 60}
+                          defaultValue={item[field]}
+                          onBlur={(e) => {
+                            if (e.target.value !== item[field]) {
+                              change(() => updateItem(item.id, { [field]: e.target.value }));
+                            }
+                          }}
+                        />
+                      ))}
                   </div>
                 </div>
                 <div className="d-flex align-items-center gap-3">

@@ -75,6 +75,7 @@ def cart_add(request):
     gift_wrap                 = bool(request.data.get('gift_wrap', False))
     gift_message              = str(request.data.get('gift_message') or '')[:500]
     raw_engraving             = request.data.get('engraving_text')
+    raw_engraving_back        = request.data.get('engraving_text_back')
 
     if not cart_id or (not variant_id and not coffret_configuration_id):
         return Response(
@@ -103,13 +104,14 @@ def cart_add(request):
         except (CoffretConfiguration.DoesNotExist, ValueError, ValidationError):
             return Response({'error': 'Coffret configuré introuvable.'}, status=status.HTTP_404_NOT_FOUND)
 
-    engraving_text = ''
+    engraving_text = engraving_text_back = ''
     if variant:
-        engraving_text, engraving_error = clean_engraving(variant.product, raw_engraving)
+        engraving_text, engraving_text_back, engraving_error = clean_engraving(variant, raw_engraving, raw_engraving_back)
         if engraving_error:
             return Response({'error': engraving_error}, status=status.HTTP_400_BAD_REQUEST)
         existing = CartItem.objects.filter(
-            cart=cart, variant=variant, gift_wrap=gift_wrap, gift_message=gift_message, engraving_text=engraving_text,
+            cart=cart, variant=variant, gift_wrap=gift_wrap, gift_message=gift_message,
+            engraving_text=engraving_text, engraving_text_back=engraving_text_back,
         ).first()
         future_quantity = (existing.quantity if existing else 0) + quantity
         if future_quantity > MAX_LINE_QUANTITY:
@@ -128,7 +130,7 @@ def cart_add(request):
         else:
             CartItem.objects.create(
                 cart=cart, variant=variant, quantity=quantity, gift_wrap=gift_wrap, gift_message=gift_message,
-                engraving_text=engraving_text,
+                engraving_text=engraving_text, engraving_text_back=engraving_text_back,
             )
     else:
         CartItem.objects.create(
@@ -175,11 +177,16 @@ def cart_item_update(request, item_id):
         item.gift_wrap = bool(request.data['gift_wrap'])
     if 'gift_message' in request.data:
         item.gift_message = str(request.data['gift_message'] or '')[:500]
-    if 'engraving_text' in request.data:
-        text, engraving_error = clean_engraving(item.variant.product if item.variant else None, request.data['engraving_text'])
+    if 'engraving_text' in request.data or 'engraving_text_back' in request.data:
+        text, back, engraving_error = clean_engraving(
+            item.variant,
+            request.data.get('engraving_text', item.engraving_text),
+            request.data.get('engraving_text_back', item.engraving_text_back),
+        )
         if engraving_error:
             return Response({'error': engraving_error}, status=status.HTTP_400_BAD_REQUEST)
         item.engraving_text = text
+        item.engraving_text_back = back
     item.save()
 
     return Response(serialize_cart(item.cart, request))
@@ -213,7 +220,10 @@ def delivery_zones_list(request):
 # ── Commandes ─────────────────────────────────────────────────────────────────
 def _cart_item_product_name(item):
     if item.variant:
-        return item.variant.product.name
+        # La version figure sur la commande et l'e-mail : l'atelier doit savoir laquelle préparer
+        label = item.variant.label
+        name = item.variant.product.name
+        return (name if label == 'Standard' else f'{name} — {label}')[:250]
     return f'Coffret personnalisé — {item.coffret_configuration.coffret.name}'
 
 
@@ -347,7 +357,8 @@ def _build_order(request):
         OrderItem.objects.create(
             order=order, variant=item.variant, coffret_configuration=item.coffret_configuration,
             product_name=_cart_item_product_name(item), quantity=item.quantity, unit_price=item.unit_price,
-            gift_wrap=item.gift_wrap, gift_message=item.gift_message, engraving_text=item.engraving_text,
+            gift_wrap=item.gift_wrap, gift_message=item.gift_message,
+            engraving_text=item.engraving_text, engraving_text_back=item.engraving_text_back,
         )
 
     if gift_card:

@@ -171,6 +171,7 @@ export default function CheckoutScreen() {
                   <div className="flex-grow-1 d-flex justify-content-between small">
                     <span>
                       {item.product_name || `Coffret personnalisé — ${item.coffret_configuration.coffret.name}`}
+                      {item.variant && item.variant.label !== 'Standard' && ` — ${item.variant.label}`}
                       {item.quantity > 1 && ` × ${item.quantity}`}
                     </span>
                     <span className="text-gold fw-semibold">{Number(item.subtotal).toLocaleString('fr-FR')} FCFA</span>

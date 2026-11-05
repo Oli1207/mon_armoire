@@ -37,15 +37,30 @@ class ProductVariantAdminSerializer(EngravingZoneMixin, ValidatedImagesMixin, se
 
     class Meta:
         model  = ProductVariant
-        fields = ('id', 'product', 'sku', 'color', 'size', 'material', 'price', 'old_price',
+        fields = ('id', 'product', 'sku', 'option', 'color', 'size', 'material', 'price', 'old_price',
                   'stock', 'image', 'is_default', 'label', 'discount_percent',
-                  'allow_preorder', 'restock_note', 'engraving_zone')
+                  'allow_preorder', 'restock_note', 'engraving_sides', 'engraving_zone')
         extra_kwargs = {'product': {'required': False}, 'sku': {'required': False}}
 
     def validate_price(self, value):
         if value < 0 or value > 100_000_000:
             raise serializers.ValidationError('Le prix doit être compris entre 0 et 100 000 000 FCFA.')
         return value
+
+    def validate(self, attrs):
+        # Dès qu'il y a plusieurs variantes, la cliente doit pouvoir les distinguer sur le site
+        product = self.instance.product if self.instance else self.context.get('product')
+        name_fields = ('option', 'color', 'size', 'material')
+        if product and any(field in attrs for field in name_fields):
+            siblings = product.variants.exclude(pk=self.instance.pk) if self.instance else product.variants.all()
+            parts = [str(attrs.get(field, getattr(self.instance, field, '')) or '').strip() for field in name_fields]
+            label = ' / '.join(part for part in parts if part)
+            labels = [sibling.label.lower() for sibling in siblings]
+            if labels and not label:
+                raise serializers.ValidationError({'option': 'Donnez un nom à cette variante, par exemple « Gravure recto ».'})
+            if label.lower() in labels:
+                raise serializers.ValidationError({'option': 'Une autre variante de ce produit porte déjà ce nom.'})
+        return attrs
 
     def _single_default(self, variant):
         # Une seule variante « par défaut » par produit (celle dont le prix et la photo s'affichent en premier)
@@ -59,11 +74,13 @@ class ProductVariantAdminSerializer(EngravingZoneMixin, ValidatedImagesMixin, se
     def create(self, validated_data):
         variant = super().create(validated_data)
         self._single_default(variant)
+        variant.product.refresh_personalization()
         return variant
 
     def update(self, instance, validated_data):
         variant = super().update(instance, validated_data)
         self._single_default(variant)
+        variant.product.refresh_personalization()
         return variant
 
 
@@ -83,6 +100,7 @@ class ProductAdminSerializer(serializers.ModelSerializer):
         model  = Product
         fields = ('id', 'name', 'slug', 'description', 'symbolic_meaning', 'category', 'category_name',
                   'collections', 'is_active', 'is_new', 'is_personalizable', 'engraving_max_chars', 'created_at', 'variants', 'images')
+        read_only_fields = ('is_personalizable',)  # découle de la gravure de chaque variante
         extra_kwargs = {'slug': {'required': False}}
 
 

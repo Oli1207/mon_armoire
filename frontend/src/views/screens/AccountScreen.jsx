@@ -6,6 +6,7 @@ import { favoritesAPI, ordersAPI, loyaltyAPI, authAPI } from '../../utils/api';
 import { useLoadMore } from '../../utils/usePaginated';
 import ListStatus from '../../components/ListStatus';
 import { errorText } from '../../utils/errors';
+import priceLabel from '../../utils/productPrice';
 
 const STATUS_LABELS = {
   pending: 'En attente', paid: 'Payée', processing: 'En préparation',
@@ -251,7 +252,7 @@ export default function AccountScreen() {
                       <div className="card-body">
                         <h6 className="mb-1">{f.product.name}</h6>
                         <p className="mb-0 small fw-semibold text-gold">
-                          {f.product.price ? `${Number(f.product.price).toLocaleString('fr-FR')} FCFA` : '—'}
+                          {priceLabel(f.product) || '—'}
                         </p>
                       </div>
                     </div>

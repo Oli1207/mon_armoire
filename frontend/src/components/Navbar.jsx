@@ -5,6 +5,7 @@ import useAuthStore from '../store/auth';
 import useCartStore from '../store/cart';
 import { productsAPI } from '../utils/api';
 import useSiteStore from '../store/site';
+import priceLabel from '../utils/productPrice';
 
 export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuthStore();
@@ -152,7 +153,7 @@ export default function Navbar() {
                       )}
                       <span className="flex-grow-1 text-start">
                         <span className="d-block small">{p.name}</span>
-                        {p.price && <span className="d-block small text-gold">{Number(p.price).toLocaleString('fr-FR')} FCFA</span>}
+                        {priceLabel(p) && <span className="d-block small text-gold">{priceLabel(p)}</span>}
                       </span>
                     </button>
                   ))}

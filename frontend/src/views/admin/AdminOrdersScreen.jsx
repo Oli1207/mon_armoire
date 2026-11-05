@@ -134,7 +134,7 @@ export default function AdminOrdersScreen() {
                                 <span>{item.product_name} × {item.quantity}</span>
                                 <strong>{fcfa(item.subtotal)}</strong>
                               </div>
-                              {item.engraving_text && <div className="text-gold">Gravure : « {item.engraving_text} »</div>}
+                              {item.engraving_text && <div className="text-gold">Gravure{item.engraving_text_back ? ' recto' : ''} : « {item.engraving_text} »{item.engraving_text_back && <> · verso : « {item.engraving_text_back} »</>}</div>}
                               {item.gift_wrap && <div className="cell-muted">Emballage cadeau{item.gift_message ? ` — « ${item.gift_message} »` : ''}</div>}
                             </div>
                           </div>

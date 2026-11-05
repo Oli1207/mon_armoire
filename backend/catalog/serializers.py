@@ -37,14 +37,17 @@ class ProductVariantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = ProductVariant
-        fields = ('id', 'sku', 'color', 'size', 'material', 'price', 'old_price',
+        fields = ('id', 'sku', 'option', 'color', 'size', 'material', 'price', 'old_price',
                   'discount_percent', 'stock', 'image', 'label', 'is_default',
-                  'allow_preorder', 'restock_note', 'engraving_zone')
+                  'allow_preorder', 'restock_note', 'engraving_sides', 'engraving_zone')
 
 
 # ── Liste (fiche allégée pour le catalogue) ──────────────────────────────────
 class ProductListSerializer(serializers.ModelSerializer):
     price              = serializers.ReadOnlyField()
+    min_price          = serializers.ReadOnlyField()
+    has_price_range    = serializers.ReadOnlyField()
+    needs_choice       = serializers.ReadOnlyField()
     main_image         = serializers.SerializerMethodField()  # miniature : les listes affichent des cartes
     is_in_stock        = serializers.ReadOnlyField()
     category           = CategorySerializer(read_only=True)
@@ -54,7 +57,7 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = Product
-        fields = ('id', 'name', 'slug', 'category', 'is_new', 'price', 'main_image', 'is_in_stock',
+        fields = ('id', 'name', 'slug', 'category', 'is_new', 'price', 'min_price', 'has_price_range', 'needs_choice', 'main_image', 'is_in_stock',
                   'is_personalizable', 'default_variant_id', 'rating_average', 'rating_count')
 
     def get_default_variant_id(self, obj):
@@ -98,12 +101,15 @@ class SymbolGuideSerializer(serializers.ModelSerializer):
 # ── Lookbook / galerie ────────────────────────────────────────────────────────
 class LookbookProductSerializer(serializers.ModelSerializer):
     price              = serializers.ReadOnlyField()
+    min_price          = serializers.ReadOnlyField()
+    has_price_range    = serializers.ReadOnlyField()
+    needs_choice       = serializers.ReadOnlyField()
     main_image         = serializers.SerializerMethodField()
     default_variant_id = serializers.SerializerMethodField()
 
     class Meta:
         model  = Product
-        fields = ('id', 'name', 'slug', 'price', 'main_image', 'default_variant_id')
+        fields = ('id', 'name', 'slug', 'price', 'min_price', 'has_price_range', 'needs_choice', 'main_image', 'default_variant_id')
 
     def get_default_variant_id(self, obj):
         variant = obj.default_variant

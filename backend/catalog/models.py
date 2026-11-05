@@ -101,6 +101,28 @@ class Product(UUIDModel):
         return variant.price if variant else None
 
     @property
+    def min_price(self):
+        prices = [v.price for v in self.variants.all()]
+        return min(prices) if prices else None
+
+    @property
+    def has_price_range(self):
+        return len({v.price for v in self.variants.all()}) > 1
+
+    @property
+    def needs_choice(self):
+        """La cliente doit passer par la fiche : plusieurs versions au choix, ou un texte de gravure à donner."""
+        variants = list(self.variants.all())
+        return len(variants) > 1 or any(v.engraving_sides for v in variants)
+
+    def refresh_personalization(self):
+        """`is_personalizable` découle des versions : un produit est personnalisable si l'une d'elles comporte une gravure."""
+        personalizable = self.variants.filter(engraving_sides__gt=0).exists()
+        if personalizable != self.is_personalizable:
+            Product.objects.filter(pk=self.pk).update(is_personalizable=personalizable)
+            self.is_personalizable = personalizable
+
+    @property
     def is_in_stock(self):
         return any(v.stock > 0 for v in self.variants.all())
 
@@ -161,10 +183,14 @@ class ProductImage(UUIDModel):
         return f'Image — {self.product.name}'
 
 
-# ── Variantes produit (couleur / taille / matériau) ──────────────────────────
+# ── Variantes produit (« versions » dans l'Admin : nom libre, couleur, taille, matériau, prix, gravure) ─────
 class ProductVariant(UUIDModel):
+    ENGRAVING_CHOICES = ((0, 'Sans gravure'), (1, 'Gravure sur une face'), (2, 'Gravure recto et verso'))
+
     product    = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants')
     sku        = models.CharField(max_length=50, unique=True, blank=True)
+    option     = models.CharField(max_length=60, blank=True, default='', help_text="Nom de la version, ex : Simple, Gravure recto")
+    engraving_sides = models.PositiveSmallIntegerField(choices=ENGRAVING_CHOICES, default=0, help_text="Gravure comprise dans le prix de cette version")
     color      = models.CharField(max_length=50, blank=True, default='')
     size       = models.CharField(max_length=50, blank=True, default='')
     material   = models.CharField(max_length=100, blank=True, default='')
@@ -178,7 +204,7 @@ class ProductVariant(UUIDModel):
     engraving_zone = models.JSONField(null=True, blank=True, help_text="Zone d'aperçu de la gravure sur la photo de cette variante")
 
     class Meta:
-        ordering = ['-is_default']
+        ordering = ['-is_default', 'price', 'id']
         verbose_name_plural = 'Variantes produit'
 
     def save(self, *args, **kwargs):
@@ -194,7 +220,7 @@ class ProductVariant(UUIDModel):
 
     @property
     def label(self):
-        parts = [p for p in [self.color, self.size, self.material] if p]
+        parts = [p for p in [self.option, self.color, self.size, self.material] if p]
         return ' / '.join(parts) or 'Standard'
 
     def __str__(self):

@@ -28,13 +28,14 @@ const useCartStore = create((set, get) => ({
     }
   },
 
-  addVariant: async (variantId, quantity = 1, giftWrap = false, giftMessage = '', engravingText = '') => {
+  addVariant: async (variantId, quantity = 1, giftWrap = false, giftMessage = '', engravingText = '', engravingBack = '') => {
     const { data } = await cartAPI.add(getCartId(), {
       variant_id: variantId,
       quantity,
       gift_wrap: giftWrap,
       gift_message: giftMessage,
       engraving_text: engravingText,
+      engraving_text_back: engravingBack,
     });
     set({ cart: data });
   },

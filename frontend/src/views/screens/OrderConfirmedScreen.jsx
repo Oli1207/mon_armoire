@@ -73,7 +73,10 @@ export default function OrderConfirmedScreen() {
                   <span>{Number(item.subtotal).toLocaleString('fr-FR')} FCFA</span>
                 </div>
                 {item.engraving_text && (
-                  <div className="small text-gold">Gravure : « {item.engraving_text} »</div>
+                  <div className="small text-gold">
+                    Gravure{item.engraving_text_back ? ' recto' : ''} : « {item.engraving_text} »
+                    {item.engraving_text_back && <> · verso : « {item.engraving_text_back} »</>}
+                  </div>
                 )}
               </div>
             </div>

@@ -64,7 +64,7 @@ const STEPS = [
     route: '/admin/produits',
     target: nav('/admin/produits'),
     title: () => 'Produits',
-    body: () => '« + Nouveau produit » pour ajouter un bijou. L’interrupteur « Visible » cache un bijou du site sans le supprimer. Dans la fiche d’un produit : les photos, les variantes (prix et stock) et, pour une gravure, la zone où le texte apparaît sur la photo.',
+    body: () => '« + Nouveau produit » pour ajouter un bijou. L’interrupteur « Visible » cache un bijou du site sans le supprimer. Dans la fiche d’un produit : le prix et le stock, les photos, les autres variantes s’il y en a (par exemple avec gravure) et la zone où le texte gravé apparaît sur la photo.',
   },
   {
     id: 'catalog-more',

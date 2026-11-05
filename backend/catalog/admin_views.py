@@ -53,6 +53,9 @@ def admin_collection_detail(request, pk):
 
 
 # ── Produits ──────────────────────────────────────────────────────────────────
+FIRST_VERSION_FIELDS = ('price', 'old_price', 'stock', 'option', 'color', 'size', 'material', 'engraving_sides')
+
+
 @api_view(['GET', 'POST'])
 @permission_classes([staff_can('catalog')])
 def admin_products(request):
@@ -62,7 +65,21 @@ def admin_products(request):
         if search:
             qs = qs.filter(Q(name__icontains=search) | Q(category__name__icontains=search))
         return paginate(request, qs, ProductAdminSerializer, pagination=AdminPagination)
-    return _list_create(request, qs, ProductAdminSerializer)
+
+    # Le prix et le stock font partie de la création : ils forment la première version du produit
+    serializer = ProductAdminSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    if request.data.get('price') in (None, ''):
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    first = ProductVariantAdminSerializer(data={field: request.data[field] for field in FIRST_VERSION_FIELDS if field in request.data})
+    if not first.is_valid():
+        return Response(first.errors, status=status.HTTP_400_BAD_REQUEST)
+    with transaction.atomic():
+        product = serializer.save()
+        first.save(product=product, is_default=True)
+    return Response(ProductAdminSerializer(product).data, status=status.HTTP_201_CREATED)
 
 
 @api_view(['GET'])
@@ -103,7 +120,7 @@ def admin_variant_create(request, product_id):
         product = Product.objects.get(pk=product_id)
     except (Product.DoesNotExist, ValueError):
         return Response({'error': 'Produit introuvable.'}, status=status.HTTP_404_NOT_FOUND)
-    serializer = ProductVariantAdminSerializer(data=request.data)
+    serializer = ProductVariantAdminSerializer(data=request.data, context={'product': product})
     if serializer.is_valid():
         serializer.save(product=product)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -119,7 +136,13 @@ def admin_variant_detail(request, pk):
         return Response({'error': 'Variante introuvable.'}, status=status.HTTP_404_NOT_FOUND)
 
     # Les e-mails « de retour en stock » partent par la tâche planifiée `send_restock_notifications`
-    return _update_delete(request, obj, ProductVariantAdminSerializer)
+    product = obj.product
+    response = _update_delete(request, obj, ProductVariantAdminSerializer)
+    if request.method == 'DELETE' and response.status_code < 300:
+        if not product.variants.filter(is_default=True).exists():
+            product.variants.filter(pk__in=product.variants.values('pk')[:1]).update(is_default=True)
+        product.refresh_personalization()
+    return response
 
 
 # ── Images ────────────────────────────────────────────────────────────────────

@@ -74,6 +74,18 @@ class OrderCreationTests(Base):
         self.assertEqual(Decimal(response.data['total']), Decimal('12000'))
         self.assertFalse(self.cart.items.exists())
 
+    def test_order_keeps_the_version_and_both_engraving_texts(self):
+        self.variant.option = 'Gravure recto-verso'
+        self.variant.engraving_sides = 2
+        self.variant.save()
+        CartItem.objects.create(cart=self.cart, variant=self.variant, quantity=1, engraving_text='Awa', engraving_text_back='Eve')
+        response = self.place_order()
+        self.assertEqual(response.status_code, 201, response.content)
+        item = response.data['items'][0]
+        self.assertEqual(item['product_name'], 'Chaîne test — Gravure recto-verso')
+        self.assertEqual((item['engraving_text'], item['engraving_text_back']), ('Awa', 'Eve'))
+        self.assertEqual(Decimal(str(item['unit_price'])), Decimal('10000'))
+
     def test_failed_order_leaves_no_partial_data(self):
         self.add_to_cart()
         self.client.force_authenticate(None)

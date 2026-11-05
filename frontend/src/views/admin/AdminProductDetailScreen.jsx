@@ -7,25 +7,25 @@ import EngravingEditor from './ui/EngravingEditor';
 import { Field, IMAGE_ACCEPT, MAX_IMAGE_MB, PageHeader, errorText } from './ui/parts';
 import { prepareImage } from '../../utils/prepareImage';
 
-const EMPTY_VARIANT = { color: '', size: '', material: '', price: '', stock: '' };
+const EMPTY_VARIANT = { option: '', color: '', size: '', material: '', price: '', stock: '', engraving_sides: 0 };
 
-function VariantCard({ variant, onSave, onRemove, onPhoto, personalizable, onEngrave }) {
+const ENGRAVING_OPTIONS = [[0, 'Sans gravure'], [1, 'Gravure sur une face (recto)'], [2, 'Gravure sur les deux faces (recto et verso)']];
+const NAME_HELP = 'Ce que la cliente voit sur le site. Ex : Simple, Gravure recto, Gravure recto-verso.';
+
+/** Prix, stock et détails d'une variante : les mêmes cases pour la fiche et pour les autres variantes. */
+function VersionFields({ variant, onSave, showName }) {
   // Les champs enregistrent automatiquement quand on quitte la case, seulement si la valeur a changé
   const blurSave = (field, original) => (e) => {
     const value = e.target.value;
     if (String(value) !== String(original ?? '')) onSave(variant.id, field, value);
   };
   return (
-    <div className="variant-card">
-      <div className="variant-head">
-        <strong>{variant.label}</strong>
-        <button type="button" className="admin-link is-danger" onClick={() => onRemove(variant)}>Supprimer cette variante</button>
-      </div>
-      <div className="admin-grid cols-3">
-        <Field label="Couleur"><input className="form-control" defaultValue={variant.color} onBlur={blurSave('color', variant.color)} /></Field>
-        <Field label="Taille"><input className="form-control" defaultValue={variant.size} onBlur={blurSave('size', variant.size)} /></Field>
-        <Field label="Matériau"><input className="form-control" defaultValue={variant.material} onBlur={blurSave('material', variant.material)} /></Field>
-      </div>
+    <>
+      {showName && (
+        <Field label="Nom de cette variante" help={NAME_HELP}>
+          <input className="form-control" defaultValue={variant.option} onBlur={blurSave('option', variant.option)} />
+        </Field>
+      )}
       <div className="admin-grid cols-3">
         <Field label="Prix (FCFA)"><input type="number" min="0" step="100" inputMode="numeric" className="form-control" defaultValue={variant.price} onBlur={blurSave('price', variant.price)} /></Field>
         <Field label="En stock"><input type="number" min="0" inputMode="numeric" className="form-control" defaultValue={variant.stock} onBlur={blurSave('stock', variant.stock)} /></Field>
@@ -33,11 +33,17 @@ function VariantCard({ variant, onSave, onRemove, onPhoto, personalizable, onEng
           <input type="number" min="0" step="100" inputMode="numeric" className="form-control" defaultValue={variant.old_price ?? ''} onBlur={blurSave('old_price', variant.old_price)} />
         </Field>
       </div>
+      <Field label="Gravure comprise dans ce prix" help="Avec gravure, la cliente doit écrire son texte avant d’ajouter au panier.">
+        <select className="form-select" value={variant.engraving_sides} onChange={(e) => onSave(variant.id, 'engraving_sides', Number(e.target.value))}>
+          {ENGRAVING_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+      </Field>
+      <div className="admin-grid cols-3">
+        <Field label="Couleur (facultatif)"><input className="form-control" defaultValue={variant.color} onBlur={blurSave('color', variant.color)} /></Field>
+        <Field label="Taille (facultatif)"><input className="form-control" defaultValue={variant.size} onBlur={blurSave('size', variant.size)} /></Field>
+        <Field label="Matériau (facultatif)"><input className="form-control" defaultValue={variant.material} onBlur={blurSave('material', variant.material)} /></Field>
+      </div>
       <div className="admin-checks">
-        <div className="form-check">
-          <input id={`def-${variant.id}`} type="checkbox" className="form-check-input" checked={variant.is_default} onChange={(e) => onSave(variant.id, 'is_default', e.target.checked)} />
-          <label className="form-check-label" htmlFor={`def-${variant.id}`}>Variante présentée en premier</label>
-        </div>
         <div className="form-check">
           <input id={`pre-${variant.id}`} type="checkbox" className="form-check-input" checked={variant.allow_preorder} onChange={(e) => onSave(variant.id, 'allow_preorder', e.target.checked)} />
           <label className="form-check-label" htmlFor={`pre-${variant.id}`}>Précommande possible quand le stock est à zéro</label>
@@ -48,18 +54,39 @@ function VariantCard({ variant, onSave, onRemove, onPhoto, personalizable, onEng
           <input className="form-control" defaultValue={variant.restock_note} onBlur={blurSave('restock_note', variant.restock_note)} />
         </Field>
       )}
-      <div className="d-flex align-items-center gap-3 flex-wrap">
-        {variant.image && <img className="admin-thumb" src={variant.image} alt="" />}
-        <label className="file-drop mb-0" style={{ position: 'relative' }}>
-          {variant.image ? 'Changer la photo de cette variante' : 'Ajouter une photo propre à cette variante (facultatif)'}
-          <input type="file" accept={IMAGE_ACCEPT} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onPhoto(variant.id, f); }} />
-        </label>
-        {personalizable && variant.image && (
-          <button type="button" className="btn btn-outline-primary btn-sm" onClick={() => onEngrave(variant)}>
-            {variant.engraving_zone ? 'Modifier la zone de gravure de cette photo ✓' : 'Définir la zone de gravure de cette photo'}
-          </button>
-        )}
+    </>
+  );
+}
+
+function VersionPhoto({ variant, onPhoto, personalizable, onEngrave }) {
+  return (
+    <div className="d-flex align-items-center gap-3 flex-wrap">
+      {variant.image && <img className="admin-thumb" src={variant.image} alt="" />}
+      <label className="file-drop mb-0" style={{ position: 'relative' }}>
+        {variant.image ? 'Changer la photo de cette variante' : 'Ajouter une photo propre à cette variante (facultatif)'}
+        <input type="file" accept={IMAGE_ACCEPT} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onPhoto(variant.id, f); }} />
+      </label>
+      {personalizable && variant.image && (
+        <button type="button" className="btn btn-outline-primary btn-sm" onClick={() => onEngrave(variant)}>
+          {variant.engraving_zone ? 'Modifier la zone de gravure de cette photo ✓' : 'Définir la zone de gravure de cette photo'}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function VariantCard({ variant, onSave, onRemove, onPhoto, personalizable, onEngrave }) {
+  return (
+    <div className="variant-card">
+      <div className="variant-head">
+        <strong>{variant.label}</strong>
+        <button type="button" className="admin-link is-danger" onClick={() => onRemove(variant)}>Supprimer cette variante</button>
       </div>
+      <VersionFields variant={variant} onSave={onSave} showName />
+      <VersionPhoto variant={variant} onPhoto={onPhoto} personalizable={personalizable} onEngrave={onEngrave} />
+      <button type="button" className="btn btn-outline-secondary btn-sm mt-3" onClick={() => onSave(variant.id, 'is_default', true)}>
+        Afficher cette variante en premier
+      </button>
     </div>
   );
 }
@@ -72,7 +99,9 @@ export default function AdminProductDetailScreen() {
   const [occasions, setOccasions] = useState([]);
   const [loadError, setLoadError] = useState('');
   const [newVariant, setNewVariant] = useState(EMPTY_VARIANT);
-  const [variantError, setVariantError] = useState('');
+  const [variantErrors, setVariantErrors] = useState({});
+  const [showAddVersion, setShowAddVersion] = useState(false);
+  const [mainName, setMainName] = useState('');
   const [uploading, setUploading] = useState('');
   const [engraving, setEngraving] = useState(null); // { kind: 'image' | 'variant', target, image, zone, label }
   const [savingZone, setSavingZone] = useState(false);
@@ -105,7 +134,7 @@ export default function AdminProductDetailScreen() {
 
   const saveField = (field, value, success = 'Enregistré.') => run(() => adminAPI.updateProduct(id, { [field]: value }), success);
 
-  const saveVariant = (variantId, field, value) => run(() => adminAPI.updateVariant(variantId, { [field]: value === '' && field === 'old_price' ? null : value }), 'Variante enregistrée.');
+  const saveVariant = (variantId, field, value) => run(() => adminAPI.updateVariant(variantId, { [field]: value === '' && field === 'old_price' ? null : value }), 'Enregistré.');
 
   const removeVariant = async (variant) => {
     const accepted = await confirm({ title: `Supprimer la variante « ${variant.label} » ?`, message: 'Cette action est définitive.', confirmLabel: 'Supprimer', danger: true });
@@ -114,10 +143,25 @@ export default function AdminProductDetailScreen() {
 
   const addVariant = async (event) => {
     event.preventDefault();
-    if (newVariant.price === '') { setVariantError('Indiquez le prix de cette variante.'); return; }
-    setVariantError('');
-    const ok = await run(() => adminAPI.createVariant(id, { ...newVariant, stock: newVariant.stock || 0 }), 'Variante ajoutée.');
-    if (ok) setNewVariant(EMPTY_VARIANT);
+    const main = product.variants.find((v) => v.is_default) || product.variants[0];
+    const mainUnnamed = main?.label === 'Standard';
+    const errors = {};
+    if (newVariant.price === '') errors.price = 'Indiquez le prix.';
+    if (main && !newVariant.option.trim() && !newVariant.color.trim() && !newVariant.size.trim() && !newVariant.material.trim()) {
+      errors.option = 'Donnez un nom à cette variante, par exemple « Gravure recto ».';
+    }
+    if (mainUnnamed && !mainName.trim()) errors.mainName = 'Donnez aussi un nom à la variante actuelle, par exemple « Simple ».';
+    setVariantErrors(errors);
+    if (Object.keys(errors).length) return;
+    const ok = await run(async () => {
+      if (mainUnnamed) await adminAPI.updateVariant(main.id, { option: mainName.trim() });
+      await adminAPI.createVariant(id, { ...newVariant, stock: newVariant.stock || 0 });
+    }, main ? 'Variante ajoutée.' : 'Prix enregistré.');
+    if (ok) {
+      setNewVariant(EMPTY_VARIANT);
+      setMainName('');
+      setShowAddVersion(false);
+    }
   };
 
   const uploadVariantPhoto = async (variantId, picked) => {
@@ -125,7 +169,7 @@ export default function AdminProductDetailScreen() {
     if (file.size > MAX_IMAGE_MB * 1024 * 1024) { notify(`Photo trop lourde (maximum ${MAX_IMAGE_MB} Mo).`, 'error'); return; }
     const data = new FormData();
     data.append('image', file);
-    run(() => adminAPI.updateVariant(variantId, data), 'Photo de la variante enregistrée.');
+    run(() => adminAPI.updateVariant(variantId, data), 'Photo enregistrée.');
   };
 
   const uploadPhotos = async (event) => {
@@ -176,6 +220,42 @@ export default function AdminProductDetailScreen() {
 
   const blur = (field) => (e) => { if (e.target.value !== (product[field] ?? '')) saveField(field, e.target.value); };
   const occasionIds = product.collections.map(String);
+  const mainVersion = product.variants.find((v) => v.is_default) || product.variants[0];
+  const otherVersions = product.variants.filter((v) => v !== mainVersion);
+  const onEngraveVersion = (variant) => setEngraving({ kind: 'variant', target: variant.id, image: variant.image, zone: variant.engraving_zone, label: `photo de la variante « ${variant.label} »` });
+
+  const versionForm = (
+    <form className="variant-card is-new" onSubmit={addVariant} noValidate>
+      {mainVersion?.label === 'Standard' && (
+        <Field label={`Nom de la variante actuelle (${Number(mainVersion.price).toLocaleString('fr-FR')} FCFA) *`} error={variantErrors.mainName} help="Il en faut un dès qu’il y a un choix sur le site. Ex : Simple.">
+          <input className="form-control" value={mainName} onChange={(e) => setMainName(e.target.value)} />
+        </Field>
+      )}
+      {mainVersion && (
+        <Field label="Nom de la nouvelle variante *" error={variantErrors.option} help={NAME_HELP}>
+          <input className="form-control" value={newVariant.option} onChange={(e) => setNewVariant({ ...newVariant, option: e.target.value })} />
+        </Field>
+      )}
+      <div className="admin-grid cols-2">
+        <Field label="Prix (FCFA) *" error={variantErrors.price}><input type="number" min="0" step="100" inputMode="numeric" className="form-control" value={newVariant.price} onChange={(e) => setNewVariant({ ...newVariant, price: e.target.value })} /></Field>
+        <Field label="En stock"><input type="number" min="0" inputMode="numeric" className="form-control" value={newVariant.stock} onChange={(e) => setNewVariant({ ...newVariant, stock: e.target.value })} /></Field>
+      </div>
+      <Field label="Gravure comprise dans ce prix">
+        <select className="form-select" value={newVariant.engraving_sides} onChange={(e) => setNewVariant({ ...newVariant, engraving_sides: Number(e.target.value) })}>
+          {ENGRAVING_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+      </Field>
+      <div className="admin-grid cols-3">
+        <Field label="Couleur (facultatif)"><input className="form-control" value={newVariant.color} onChange={(e) => setNewVariant({ ...newVariant, color: e.target.value })} /></Field>
+        <Field label="Taille (facultatif)"><input className="form-control" value={newVariant.size} onChange={(e) => setNewVariant({ ...newVariant, size: e.target.value })} /></Field>
+        <Field label="Matériau (facultatif)"><input className="form-control" value={newVariant.material} onChange={(e) => setNewVariant({ ...newVariant, material: e.target.value })} /></Field>
+      </div>
+      <div className="d-flex gap-2 flex-wrap">
+        <button type="submit" className="btn btn-primary">{mainVersion ? 'Ajouter cette variante' : 'Enregistrer le prix'}</button>
+        {mainVersion && <button type="button" className="btn btn-outline-secondary" onClick={() => setShowAddVersion(false)}>Annuler</button>}
+      </div>
+    </form>
+  );
 
   return (
     <div>
@@ -185,7 +265,7 @@ export default function AdminProductDetailScreen() {
       </PageHeader>
 
       <div className="admin-jump" role="group" aria-label="Aller à une partie de la fiche">
-        {[['infos', 'Infos'], ['photos', 'Photos'], ['variantes', 'Variantes']].map(([id, label]) => (
+        {[['infos', 'Infos'], ['prix', 'Prix et stock'], ['photos', 'Photos'], ['variantes', 'Variantes']].map(([id, label]) => (
           <button key={id} type="button" onClick={() => document.getElementById(id)?.scrollIntoView({ block: 'start' })}>{label}</button>
         ))}
       </div>
@@ -213,10 +293,6 @@ export default function AdminProductDetailScreen() {
           <div className="form-check">
             <input id="p-new" type="checkbox" className="form-check-input" checked={product.is_new} onChange={(e) => saveField('is_new', e.target.checked)} />
             <label className="form-check-label" htmlFor="p-new">Nouveauté</label>
-          </div>
-          <div className="form-check">
-            <input id="p-perso" type="checkbox" className="form-check-input" checked={product.is_personalizable} onChange={(e) => saveField('is_personalizable', e.target.checked)} />
-            <label className="form-check-label" htmlFor="p-perso">Personnalisable (la cliente peut demander une gravure)</label>
           </div>
         </div>
         {product.is_personalizable && (
@@ -250,6 +326,21 @@ export default function AdminProductDetailScreen() {
               })}
             </div>
           </Field>
+        )}
+      </section>
+
+      <section id="prix" className="admin-card" key={`price-${mainVersion?.id}-${epoch}`}>
+        <h2 className="admin-card-title">Prix et stock</h2>
+        {mainVersion ? (
+          <>
+            <VersionFields variant={mainVersion} onSave={saveVariant} showName={otherVersions.length > 0} />
+            {mainVersion.image && <VersionPhoto variant={mainVersion} onPhoto={uploadVariantPhoto} personalizable={product.is_personalizable} onEngrave={onEngraveVersion} />}
+          </>
+        ) : (
+          <>
+            <p className="admin-help mb-3">Indiquez le prix : sans prix, ce produit ne peut pas être acheté.</p>
+            {versionForm}
+          </>
         )}
       </section>
 
@@ -288,31 +379,23 @@ export default function AdminProductDetailScreen() {
         />
       )}
 
-      <section id="variantes" className="admin-card">
-        <h2 className="admin-card-title">Variantes (couleurs, tailles, prix, stock)</h2>
-        {product.variants.length === 0 && <p className="admin-help mb-3">Ajoutez au moins une variante : sans variante, le produit ne peut pas être acheté.</p>}
-        {product.variants.map((v) => (
-          <VariantCard
-            key={`${v.id}-${epoch}`} variant={v} onSave={saveVariant} onRemove={removeVariant} onPhoto={uploadVariantPhoto}
-            personalizable={product.is_personalizable}
-            onEngrave={(variant) => setEngraving({ kind: 'variant', target: variant.id, image: variant.image, zone: variant.engraving_zone, label: `photo de la variante « ${variant.label} »` })}
-          />
-        ))}
-
-        <form className="variant-card is-new" onSubmit={addVariant} noValidate>
-          <div className="variant-head"><strong>Ajouter une variante</strong></div>
-          <div className="admin-grid cols-3">
-            <Field label="Couleur"><input className="form-control" value={newVariant.color} onChange={(e) => setNewVariant({ ...newVariant, color: e.target.value })} /></Field>
-            <Field label="Taille"><input className="form-control" value={newVariant.size} onChange={(e) => setNewVariant({ ...newVariant, size: e.target.value })} /></Field>
-            <Field label="Matériau"><input className="form-control" value={newVariant.material} onChange={(e) => setNewVariant({ ...newVariant, material: e.target.value })} /></Field>
-          </div>
-          <div className="admin-grid cols-3">
-            <Field label="Prix (FCFA) *" error={variantError}><input type="number" min="0" step="100" inputMode="numeric" className="form-control" value={newVariant.price} onChange={(e) => setNewVariant({ ...newVariant, price: e.target.value })} /></Field>
-            <Field label="En stock"><input type="number" min="0" inputMode="numeric" className="form-control" value={newVariant.stock} onChange={(e) => setNewVariant({ ...newVariant, stock: e.target.value })} /></Field>
-          </div>
-          <button type="submit" className="btn btn-primary">Ajouter la variante</button>
-        </form>
-      </section>
+      {mainVersion && (
+        <section id="variantes" className="admin-card">
+          <h2 className="admin-card-title">Autres variantes de ce produit</h2>
+          <p className="admin-help mb-3">
+            Seulement si ce même produit existe aussi avec un autre prix, une autre couleur ou une gravure. Exemple : simple 4 500, gravure recto 10 000, gravure recto-verso 12 000. La cliente choisira sur le site.
+          </p>
+          {otherVersions.map((v) => (
+            <VariantCard
+              key={`${v.id}-${epoch}`} variant={v} onSave={saveVariant} onRemove={removeVariant} onPhoto={uploadVariantPhoto}
+              personalizable={product.is_personalizable} onEngrave={onEngraveVersion}
+            />
+          ))}
+          {showAddVersion ? versionForm : (
+            <button type="button" className="btn btn-outline-primary" onClick={() => setShowAddVersion(true)}>+ Ajouter une autre variante</button>
+          )}
+        </section>
+      )}
     </div>
   );
 }

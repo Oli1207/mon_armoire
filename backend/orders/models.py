@@ -85,6 +85,7 @@ class CartItem(UUIDModel):
     gift_wrap             = models.BooleanField(default=False)
     gift_message          = models.TextField(blank=True)
     engraving_text        = models.CharField(max_length=60, blank=True, help_text="Texte de gravure/personnalisation")
+    engraving_text_back   = models.CharField(max_length=60, blank=True, help_text="Texte de gravure au verso")
     added_at              = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -155,6 +156,7 @@ class OrderItem(UUIDModel):
     gift_wrap             = models.BooleanField(default=False)
     gift_message          = models.TextField(blank=True)
     engraving_text        = models.CharField(max_length=60, blank=True, help_text="Texte de gravure/personnalisation")
+    engraving_text_back   = models.CharField(max_length=60, blank=True, help_text="Texte de gravure au verso")
 
     @property
     def subtotal(self):

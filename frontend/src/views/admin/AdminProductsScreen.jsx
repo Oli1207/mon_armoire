@@ -13,7 +13,7 @@ export default function AdminProductsScreen() {
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState('');
   const [showNew, setShowNew] = useState(false);
-  const [form, setForm] = useState({ name: '', category: '', description: '' });
+  const [form, setForm] = useState({ name: '', category: '', price: '', stock: '', description: '' });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const newForm = useRevealOnOpen(showNew);
@@ -26,12 +26,16 @@ export default function AdminProductsScreen() {
 
   const create = async (event) => {
     event.preventDefault();
-    if (!form.name.trim()) { setErrors({ name: 'Donnez un nom au produit.' }); return; }
+    const missing = {};
+    if (!form.name.trim()) missing.name = 'Donnez un nom au produit.';
+    if (form.price === '') missing.price = 'Indiquez le prix.';
+    if (form.stock === '') missing.stock = 'Indiquez combien vous en avez (0 si aucun).';
+    if (Object.keys(missing).length) { setErrors(missing); return; }
     setSaving(true);
     setErrors({});
     try {
       const { data } = await adminAPI.createProduct({ ...form, category: form.category || null });
-      notify('Produit créé. Ajoutez maintenant ses photos et ses variantes.');
+      notify('Produit créé. Ajoutez maintenant ses photos.');
       navigate(`/admin/produits/${data.id}`);
     } catch (err) {
       setErrors(fieldErrors(err));
@@ -87,6 +91,14 @@ export default function AdminProductsScreen() {
               </select>
             </Field>
           </div>
+          <div className="admin-grid cols-2">
+            <Field label="Prix (FCFA) *" error={errors.price} htmlFor="new-price">
+              <input id="new-price" type="number" min="0" step="100" inputMode="numeric" className="form-control" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+            </Field>
+            <Field label="En stock *" error={errors.stock} htmlFor="new-stock">
+              <input id="new-stock" type="number" min="0" inputMode="numeric" className="form-control" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
+            </Field>
+          </div>
           <Field label="Description" htmlFor="new-description">
             <textarea id="new-description" rows={3} className="form-control" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </Field>
@@ -122,7 +134,7 @@ export default function AdminProductsScreen() {
                     <td className="cell-photo">{image ? <img className="admin-thumb" src={image.thumbnail || image.image} alt="" loading="lazy" /> : <span className="admin-thumb admin-thumb-empty" />}</td>
                     <td>
                       <Link to={`/admin/produits/${p.id}`}><strong>{p.name}</strong></Link>
-                      <div className="cell-muted">{p.category_name || 'Sans catégorie'} · {p.variants.length} variante{p.variants.length > 1 ? 's' : ''}</div>
+                      <div className="cell-muted">{p.category_name || 'Sans catégorie'}{p.variants.length > 1 ? ` · ${p.variants.length} variantes` : ''}</div>
                     </td>
                     <td>{prices.length ? (Math.min(...prices) === Math.max(...prices) ? fcfa(prices[0]) : `dès ${fcfa(Math.min(...prices))}`) : <span className="cell-muted">—</span>}</td>
                     <td>{p.variants.length ? (stock > 0 ? stock : <StatusBadge status="cancelled" label="Rupture" />) : '—'}</td>

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { productsAPI } from '../utils/api';
 import QueuedImage from './QueuedImage';
+import priceLabel from '../utils/productPrice';
 import { StarRating } from './Stars';
 
 /**
@@ -60,7 +61,7 @@ export default function Suggestions({ like = [], title = 'Vous aimerez aussi', l
                       <span className="small text-muted">({p.rating_count})</span>
                     </div>
                   )}
-                  <p className="mb-0 fw-semibold text-gold">{p.price ? `${Number(p.price).toLocaleString('fr-FR')} FCFA` : '—'}</p>
+                  <p className="mb-0 fw-semibold text-gold">{priceLabel(p) || '—'}</p>
                   {p.is_new && <span className="badge badge-gold mt-1">Nouveauté</span>}
                 </div>
               </div>

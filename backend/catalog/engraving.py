@@ -74,16 +74,30 @@ def validate_zone(value):
     return zone
 
 
-def clean_engraving(product, raw_text):
-    """(texte nettoyé, message d'erreur). Le texte n'est conservé que pour un bijou personnalisable, avec des caractères
-    simples (lettres, chiffres, espace, apostrophe, point, tiret, &) et dans la limite fixée pour ce bijou."""
+def _clean_side(raw_text, limit, missing):
     text = ' '.join(str(raw_text or '').split())[:MAX_ENGRAVING_CHARS + 1]
     if not text:
-        return '', None
-    if product is None or not product.is_personalizable:
-        return '', None
-    if len(text) > product.engraving_max_chars:
-        return '', f'La gravure est limitée à {product.engraving_max_chars} caractères pour ce bijou.'
+        return '', missing
+    if len(text) > limit:
+        return '', f'La gravure est limitée à {limit} caractères pour ce bijou.'
     if not TEXT_RE.match(text):
         return '', 'La gravure accepte seulement des lettres, des chiffres, des espaces, l’apostrophe, le point, le tiret et le &.'
     return text, None
+
+
+def clean_engraving(variant, raw_text, raw_back=''):
+    """(recto, verso, message d'erreur), selon la gravure comprise dans le prix de cette version : aucun texte conservé
+    pour une version sans gravure, texte obligatoire pour chaque face payée."""
+    sides = variant.engraving_sides if variant else 0
+    if not sides:
+        return '', '', None
+    limit = variant.product.engraving_max_chars
+    front, error = _clean_side(raw_text, limit, 'Indiquez le texte à graver.' if sides == 1 else 'Indiquez le texte à graver au recto.')
+    if error:
+        return '', '', error
+    if sides == 1:
+        return front, '', None
+    back, error = _clean_side(raw_back, limit, 'Indiquez le texte à graver au verso.')
+    if error:
+        return '', '', error
+    return front, back, None

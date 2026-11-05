@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { lookbookAPI } from '../../utils/api';
 import useCartStore from '../../store/cart';
 import QueuedImage from '../../components/QueuedImage';
+import priceLabel from '../../utils/productPrice';
 
 export default function LookbookScreen() {
   const navigate = useNavigate();
@@ -21,12 +22,14 @@ export default function LookbookScreen() {
   const buyTheLook = async (look) => {
     setBuyingLookId(look.id);
     try {
+      // Un bijou à plusieurs versions ou à graver se choisit sur sa fiche : on y conduit la cliente une fois le reste au panier
+      const toChoose = look.products.find((p) => p.needs_choice);
       for (const p of look.products) {
-        if (p.default_variant_id) {
+        if (p.default_variant_id && !p.needs_choice) {
           await addVariant(p.default_variant_id, 1);
         }
       }
-      navigate('/panier');
+      navigate(toChoose ? `/produits/${toChoose.slug}` : '/panier');
     } finally {
       setBuyingLookId('');
     }
@@ -86,7 +89,7 @@ export default function LookbookScreen() {
                           )}
                           <span className="small flex-grow-1">{p.name}</span>
                           <span className="small text-gold fw-semibold">
-                            {p.price ? `${Number(p.price).toLocaleString('fr-FR')} FCFA` : ''}
+                            {priceLabel(p)}
                           </span>
                         </Link>
                       ))}

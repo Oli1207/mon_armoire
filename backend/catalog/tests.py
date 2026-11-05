@@ -348,7 +348,7 @@ class EngravingTests(APITestCase):
         self.admin = User.objects.create_user(username='a', email='a@test.ci', password='Test-pass-123', is_staff=True, is_superuser=True)
         self.category = Category.objects.create(name='Chapelets')
         self.product = Product.objects.create(name='Chapelet perso', category=self.category, is_personalizable=True, engraving_max_chars=10)
-        self.variant = ProductVariant.objects.create(product=self.product, price=Decimal('15000'), stock=5, is_default=True)
+        self.variant = ProductVariant.objects.create(product=self.product, price=Decimal('15000'), stock=5, is_default=True, engraving_sides=1)
         self.image = ProductImage.objects.create(product=self.product, image='products/x.jpg', is_main=True)
 
     def save_zone(self, zone, target='image'):
@@ -416,10 +416,105 @@ class EngravingTests(APITestCase):
 
     def test_cart_update_applies_the_same_rules(self):
         cart_id = str(uuid.uuid4())
-        added = self.client.post('/api/cart/add/', {'cart_id': cart_id, 'variant_id': str(self.variant.id)}, format='json')
+        added = self.client.post('/api/cart/add/', {'cart_id': cart_id, 'variant_id': str(self.variant.id), 'engraving_text': 'Eve'}, format='json')
         item_id = added.data['items'][0]['id']
         patch = lambda text: self.client.patch(f'/api/cart/items/{item_id}/', {'cart_id': cart_id, 'engraving_text': text}, format='json')
         self.assertEqual(patch('Awa').status_code, 200)
         self.assertEqual(patch('Un texte beaucoup trop long').status_code, 400)
         self.assertEqual(patch('<x>').status_code, 400)
-        self.assertEqual(patch('').data['items'][0]['engraving_text'], '')
+        self.assertEqual(patch('').status_code, 400)  # gravure payée : le texte reste obligatoire
+
+
+class ProductVersionsTests(APITestCase):
+    """Un même chapelet : simple 4 500, gravure recto 10 000, gravure recto-verso 12 000."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user(username='a', email='a@test.ci', password='Test-pass-123', is_staff=True, is_superuser=True)
+        self.client.force_authenticate(self.admin)
+
+    def make_product(self):
+        response = self.client.post('/api/admin/products/', {'name': 'Chapelet', 'price': '4500', 'stock': 3}, format='json')
+        self.assertEqual(response.status_code, 201, response.content)
+        return response.data
+
+    def add_version(self, product, **data):
+        return self.client.post(f"/api/admin/products/{product['id']}/variants/", {'stock': 2, **data}, format='json')
+
+    def chapelet(self):
+        product = self.make_product()
+        first = product['variants'][0]
+        self.assertEqual(self.client.patch(f"/api/admin/variants/{first['id']}/", {'option': 'Simple'}, format='json').status_code, 200)
+        recto = self.add_version(product, option='Gravure recto', price='10000', engraving_sides=1).data
+        both = self.add_version(product, option='Gravure recto-verso', price='12000', engraving_sides=2).data
+        self.client.force_authenticate(None)
+        return Product.objects.get(pk=product['id']), first, recto, both
+
+    def cart(self, variant, **texts):
+        return self.client.post('/api/cart/add/', {'cart_id': str(uuid.uuid4()), 'variant_id': str(variant['id']), **texts}, format='json')
+
+    def test_creating_a_product_with_a_price_creates_its_first_version(self):
+        product = self.make_product()
+        self.assertEqual(len(product['variants']), 1)
+        self.assertEqual(product['variants'][0]['label'], 'Standard')
+        self.assertTrue(product['variants'][0]['is_default'])
+        self.assertEqual(product['variants'][0]['stock'], 3)
+
+    def test_a_bad_price_creates_nothing(self):
+        response = self.client.post('/api/admin/products/', {'name': 'Rien', 'price': '-5'}, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('price', response.data)
+        self.assertFalse(Product.objects.filter(name='Rien').exists())
+
+    def test_versions_must_be_distinguishable(self):
+        product = self.make_product()
+        first = product['variants'][0]
+        self.client.patch(f"/api/admin/variants/{first['id']}/", {'option': 'Simple'}, format='json')
+        self.assertIn('option', self.add_version(product, price='1000').data)
+        self.assertIn('option', self.add_version(product, price='1000', option='simple').data)
+        ok = self.add_version(product, price='1000', option='Gravure').data
+        self.assertIn('option', self.client.patch(f"/api/admin/variants/{ok['id']}/", {'option': ''}, format='json').data)
+        self.assertEqual(self.client.patch(f"/api/admin/variants/{ok['id']}/", {'price': '2000'}, format='json').status_code, 200)
+
+    def test_listing_shows_the_lowest_price_and_opens_the_choice(self):
+        product, *_ = self.chapelet()
+        item = self.client.get('/api/products/').data['results'][0]
+        self.assertEqual(Decimal(str(item['min_price'])), Decimal('4500'))
+        self.assertTrue(item['has_price_range'])
+        self.assertTrue(item['needs_choice'])
+        self.assertTrue(Product.objects.get(pk=product.pk).is_personalizable)
+
+    def test_each_version_is_charged_its_own_price_with_its_own_engraving(self):
+        _, simple, recto, both = self.chapelet()
+        response = self.cart(simple, engraving_text='Intrus')
+        self.assertEqual(response.data['items'][0]['engraving_text'], '')
+        self.assertEqual(Decimal(str(response.data['total'])), Decimal('4500'))
+
+        self.assertEqual(self.cart(recto).status_code, 400)
+        response = self.cart(recto, engraving_text='Awa', engraving_text_back='Intrus')
+        self.assertEqual((response.data['items'][0]['engraving_text'], response.data['items'][0]['engraving_text_back']), ('Awa', ''))
+        self.assertEqual(Decimal(str(response.data['total'])), Decimal('10000'))
+
+        self.assertIn('verso', self.cart(both, engraving_text='Awa').data['error'])
+        self.assertIn('recto', self.cart(both, engraving_text_back='Eve').data['error'])
+        response = self.cart(both, engraving_text='Awa', engraving_text_back='Eve')
+        self.assertEqual(response.data['items'][0]['engraving_text_back'], 'Eve')
+        self.assertEqual(response.data['items'][0]['engraving_sides'], 2)
+        self.assertEqual(Decimal(str(response.data['total'])), Decimal('12000'))
+
+    def test_the_client_cannot_choose_the_price(self):
+        _, simple, *_ = self.chapelet()
+        response = self.cart(simple, price='1', unit_price='1')
+        self.assertEqual(Decimal(str(response.data['total'])), Decimal('4500'))
+
+    def test_deleting_the_last_engraved_version_updates_the_product(self):
+        product, simple, recto, both = self.chapelet()
+        self.client.force_authenticate(self.admin)
+        self.client.delete(f"/api/admin/variants/{recto['id']}/")
+        self.client.delete(f"/api/admin/variants/{both['id']}/")
+        self.assertFalse(Product.objects.get(pk=product.pk).is_personalizable)
+
+    def test_deleting_the_first_version_promotes_another(self):
+        product, simple, recto, both = self.chapelet()
+        self.client.force_authenticate(self.admin)
+        self.client.delete(f"/api/admin/variants/{simple['id']}/")
+        self.assertEqual(ProductVariant.objects.filter(product=product, is_default=True).count(), 1)

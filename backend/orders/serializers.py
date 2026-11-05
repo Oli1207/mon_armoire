@@ -25,13 +25,22 @@ class CartItemSerializer(serializers.ModelSerializer):
     product_name          = serializers.SerializerMethodField()
     product_slug          = serializers.SerializerMethodField()
     product_image          = serializers.SerializerMethodField()
+    engraving_sides        = serializers.SerializerMethodField()
+    engraving_max_chars    = serializers.SerializerMethodField()
     unit_price             = serializers.ReadOnlyField()
     subtotal               = serializers.ReadOnlyField()
 
     class Meta:
         model  = CartItem
         fields = ('id', 'variant', 'coffret_configuration', 'product_name', 'product_slug', 'product_image', 'quantity',
-                  'gift_wrap', 'gift_message', 'engraving_text', 'unit_price', 'subtotal', 'added_at')
+                  'gift_wrap', 'gift_message', 'engraving_text', 'engraving_text_back', 'engraving_sides', 'engraving_max_chars',
+                  'unit_price', 'subtotal', 'added_at')
+
+    def get_engraving_sides(self, obj):
+        return obj.variant.engraving_sides if obj.variant else 0
+
+    def get_engraving_max_chars(self, obj):
+        return obj.variant.product.engraving_max_chars if obj.variant else None
 
     def get_product_name(self, obj):
         return obj.variant.product.name if obj.variant else None
@@ -68,7 +77,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model  = OrderItem
         fields = ('id', 'variant', 'coffret_configuration', 'product_name', 'product_image', 'quantity',
-                  'unit_price', 'subtotal', 'gift_wrap', 'gift_message', 'engraving_text')
+                  'unit_price', 'subtotal', 'gift_wrap', 'gift_message', 'engraving_text', 'engraving_text_back')
 
     def get_product_image(self, obj):
         return _item_image(obj)

@@ -7,9 +7,9 @@ const TASKS = [
     title: 'Ajouter un nouveau bijou',
     steps: [
       <>Menu <Link to="/admin/produits">Produits</Link> puis bouton « + Nouveau produit ».</>,
-      'Écrivez le nom, choisissez la catégorie, puis cliquez sur « Créer et continuer ».',
+      'Écrivez le nom, le prix et le stock, choisissez la catégorie, puis cliquez sur « Créer et continuer ».',
       'Sur la fiche : ajoutez une ou plusieurs photos (la première devient la photo principale).',
-      'Section « Variantes » : ajoutez au moins une variante avec son prix et son stock. Sans variante, le bijou ne peut pas être acheté.',
+      'Si le même bijou existe avec un autre prix, une autre couleur ou une gravure (par exemple simple, gravure recto, gravure recto-verso), ajoutez-les dans « Autres variantes » en bas de la fiche. Sinon, ne touchez à rien.',
       'Vérifiez que « Visible sur le site » est activé. Le bijou apparaît sur le site en moins d’une minute.',
     ],
   },
@@ -17,8 +17,8 @@ const TASKS = [
     title: 'Changer un prix ou mettre à jour le stock',
     steps: [
       <>Menu <Link to="/admin/produits">Produits</Link>, ouvrez le bijou (bouton « Modifier »).</>,
-      'Section « Variantes » : changez le prix ou le stock dans la case, puis cliquez en dehors de la case.',
-      'Un message vert « Variante enregistrée » confirme. Rien d’autre à faire.',
+      'Partie « Prix et stock » (ou « Autres variantes » s’il y en a) : changez la valeur dans la case, puis cliquez en dehors de la case.',
+      'Le message « Enregistré » confirme. Rien d’autre à faire.',
     ],
   },
   {
@@ -34,7 +34,7 @@ const TASKS = [
     steps: [
       'Mettez le stock à 0 : la cliente voit « Rupture de stock » et peut laisser son e-mail.',
       'Quand vous remettez du stock, les personnes en attente sont prévenues automatiquement par e-mail (dans la demi-heure).',
-      'Pour accepter les commandes malgré le stock à 0 (fabrication sur demande), cochez « Précommande possible » sur la variante et écrivez un message, par exemple « Retour en stock mi-décembre ».',
+      'Pour accepter les commandes malgré le stock à 0 (fabrication sur demande), cochez « Précommande possible » et écrivez un message, par exemple « Retour en stock mi-décembre ».',
     ],
   },
   {
@@ -110,7 +110,7 @@ const PROBLEMS = [
     title: 'Mon bijou n’apparaît pas sur le site',
     steps: [
       'Vérifiez que « Visible sur le site » est activé sur sa fiche.',
-      'Vérifiez qu’il a au moins une variante avec un prix.',
+      'Vérifiez qu’il a bien un prix.',
       'Si le stock est à 0, il apparaît avec la mention « Rupture ».',
       'Patientez une minute puis rechargez la page du site.',
     ],

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { lookbookAPI } from '../../utils/api';
 import useCartStore from '../../store/cart';
+import QueuedImage from '../../components/QueuedImage';
 
 export default function LookbookScreen() {
   const navigate = useNavigate();
@@ -50,7 +51,7 @@ export default function LookbookScreen() {
           <div className="row g-5">
             {looks.map((look) => (
               <div className="col-md-6 col-lg-4" key={look.id}>
-                <img
+                <QueuedImage
                   src={look.image}
                   alt={look.title}
                   className="shadow-sm mb-3"

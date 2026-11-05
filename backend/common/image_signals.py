@@ -6,7 +6,7 @@ from .imaging import FULL_SIDE, REVIEW_SIDE, make_thumbnail, optimize_field
 
 # (modèle, champ, taille max, champ miniature éventuel)
 IMAGE_FIELDS = [
-    ('catalog.Category', 'image', FULL_SIDE, None),
+    ('catalog.Category', 'image', FULL_SIDE, 'thumbnail'),
     ('common.SiteSettings', 'hero_image', FULL_SIDE, None),
     ('catalog.Collection', 'image', FULL_SIDE, None),
     ('catalog.LookbookEntry', 'image', FULL_SIDE, None),

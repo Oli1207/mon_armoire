@@ -255,6 +255,24 @@ class ImageOptimizationTests(APITestCase):
         self.assertIn('_thumb', listing)
         self.assertNotIn('_thumb', detail['image'])
 
+    def test_category_photo_is_served_as_a_thumbnail(self):
+        self.category.image = self.png()
+        self.category.save()
+        self.assertIn('_thumb', self.client.get('/api/categories/').data[0]['cover_image'])
+
+    def test_optimize_images_backfills_categories_without_thumbnail(self):
+        from django.core.management import call_command
+        self.category.image = self.png()
+        self.category.save()
+        Category.objects.filter(pk=self.category.pk).update(thumbnail=None)
+        call_command('optimize_images')
+        self.category.refresh_from_db()
+        self.assertIn('_thumb', self.category.thumbnail.name)
+        before = self.category.thumbnail.name
+        call_command('optimize_images')  # idempotent
+        self.category.refresh_from_db()
+        self.assertEqual(self.category.thumbnail.name, before)
+
     def test_thumbnail_command_backfills_missing_thumbnails(self):
         from django.core.management import call_command
         image = ProductImage.objects.create(product=self.product, image=self.png(), is_main=True)

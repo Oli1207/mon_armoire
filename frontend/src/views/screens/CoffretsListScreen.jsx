@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { coffretsAPI } from '../../utils/api';
+import QueuedImage from '../../components/QueuedImage';
 
 export default function CoffretsListScreen() {
   const [coffrets, setCoffrets] = useState([]);
@@ -25,7 +26,7 @@ export default function CoffretsListScreen() {
               <div className="col-md-4" key={c.id}>
                 <div className="card product-card h-100 shadow-sm">
                   {c.image ? (
-                    <img src={c.image} alt={c.name} className="card-img-top" />
+                    <QueuedImage src={c.image} alt={c.name} className="card-img-top" />
                   ) : (
                     <div className="card-img-top d-flex align-items-center justify-content-center text-muted bg-white">
                       Pas d'image

@@ -21,6 +21,19 @@
 /* Cibles tactiles ≥ 44 px */
 .rating-link { min-height: 2.75rem; }
 .product-card .card-body > .d-flex > a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+/* Téléphone : deux cartes par ligne, trop étroites pour le nom et le cœur côte à côte (un mot long poussait le cœur hors de la carte) */
+@media (max-width: 575.98px) {
+  .product-card { position: relative; }
+  .product-card .card-body > .d-flex > a { min-width: 0; overflow-wrap: break-word; }
+  .product-card .fav-btn {
+    position: absolute; top: 0.35rem; right: 0.35rem; z-index: 2;
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 2.75rem;
+    background-color: var(--ma-cream) !important;
+    border: 2px solid #333 !important;
+    border-radius: var(--bs-border-radius-sm);
+  }
+}
 
 /* Guide d'installation */
 .install-guide { background: #fff; border: 2px solid #333; border-radius: var(--bs-border-radius-sm); padding: 0.25rem 1rem 0.75rem; margin-bottom: 0.75rem; }

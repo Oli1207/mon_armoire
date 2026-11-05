@@ -1,4 +1,4 @@
-/* ── Espace Admin : mêmes jetons que le site (crème, émeraude, or, coins droits), aucun style Bootstrap par défaut ── */
+/* ── Espace Admin : mêmes jetons que le site (crème, brun, or, coins droits), aucun style Bootstrap par défaut ── */
 
 .admin-shell {
   max-width: 1280px;
@@ -358,11 +358,11 @@
 }
 .status-pending    { background: transparent; color: #8a6d12; border-color: var(--ma-gold); }
 .status-paid       { background: var(--ma-gold); color: var(--ma-brown-dark); }
-.status-processing { background: #dfe8e2; color: var(--ma-brown); }
-.status-shipped    { background: #c3d5c9; color: var(--ma-brown); }
+.status-processing { background: #F3E7DC; color: var(--ma-brown); }
+.status-shipped    { background: #E6D3C2; color: var(--ma-brown); }
 .status-delivered  { background: var(--ma-brown); color: var(--ma-cream); }
 .status-cancelled  { background: #ece5d6; color: #7a6f5f; }
-.status-on         { background: #dfe8e2; color: var(--ma-brown); }
+.status-on         { background: #F3E7DC; color: var(--ma-brown); }
 .status-off        { background: #ece5d6; color: #7a6f5f; }
 
 /* ── Retours visibles : notifications et confirmation ─────────────────────── */

@@ -111,7 +111,14 @@ export default function ProductDetailScreen() {
                 src={activeImage || variant?.image || product.images[0]?.image}
                 alt={product.name}
                 className="img-fluid product-photo"
-                style={{ aspectRatio: '1/1', objectFit: 'cover', width: '100%' }}
+                fetchPriority="high"
+                decoding="async"
+                // La miniature, déjà en cache depuis le catalogue, s'affiche en attendant la grande photo
+                style={{
+                  aspectRatio: '1/1', objectFit: 'cover', width: '100%',
+                  backgroundImage: shownImage?.thumbnail ? `url("${shownImage.thumbnail}")` : undefined,
+                  backgroundSize: 'cover', backgroundPosition: 'center',
+                }}
               />
               {product.is_personalizable && <EngravingPreview zone={engravingZone} text={engravingText} />}
             </div>
@@ -134,7 +141,7 @@ export default function ProductDetailScreen() {
                     aria-label="Voir cette photo"
                     aria-pressed={isActive}
                   >
-                    <img src={img.image} alt="" />
+                    <img src={img.thumbnail || img.image} alt="" loading="lazy" decoding="async" />
                   </button>
                 );
               })}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { symbolsAPI } from '../../utils/api';
+import QueuedImage from '../../components/QueuedImage';
 
 export default function SymbolGuideScreen() {
   const [symbols, setSymbols] = useState([]);
@@ -35,7 +36,7 @@ export default function SymbolGuideScreen() {
               <div className="col-md-6" key={s.id}>
                 <div className={`d-flex flex-column flex-sm-row gap-4 ${i % 2 === 1 ? 'flex-sm-row-reverse' : ''}`}>
                   {s.image ? (
-                    <img
+                    <QueuedImage
                       src={s.image}
                       alt={s.name}
                       style={{ width: 140, height: 140, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }}

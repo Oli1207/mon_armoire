@@ -14,7 +14,7 @@ class CategorySerializer(serializers.ModelSerializer):
     def get_cover_image(self, obj):
         """Photo de couverture : image de la catégorie, sinon celle d'un de ses produits (annotation `cover_path`)."""
         if obj.image:
-            return obj.image.url
+            return obj.thumbnail.url if obj.thumbnail else obj.image.url
         path = getattr(obj, 'cover_path', None)
         return f'{settings.MEDIA_URL}{path}' if path else None
 

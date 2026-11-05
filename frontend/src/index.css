@@ -1,8 +1,8 @@
 :root {
   --ma-bg:     #F7F2EA;
-  --ma-brown:  #1F3D2E;
-  --ma-brown-dark: #142A20;
-  --ma-brown-rgb: 31, 61, 46;
+  --ma-brown:  #4A2008;
+  --ma-brown-dark: #331504;
+  --ma-brown-rgb: 74, 32, 8;
   --ma-gold:   #C9A227;
   --ma-text:   #231710;
   --ma-cream:  #FDFBF7;
@@ -97,7 +97,7 @@ a {
 }
 
 /* Badges de marque — remplacent les variantes Bootstrap par défaut (jaune vif,
-   gris, noir) qui détonnent avec la palette crème/émeraude/or. */
+   gris, noir) qui détonnent avec la palette crème/brun/or. */
 .badge-gold {
   background-color: var(--ma-gold);
   color: var(--ma-brown-dark);
@@ -299,13 +299,13 @@ a {
 
 .mobile-menu {
   border-top: 1px solid #e5ddd0;
-  padding: 1rem max(1rem, env(safe-area-inset-right)) 1rem 1rem;
-  text-align: right;
+  padding: 1rem max(1rem, env(safe-area-inset-right)) 1rem max(1rem, env(safe-area-inset-left));
+  text-align: center;
 }
 .mobile-menu > a {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   min-height: 2.75rem;
   text-decoration: none;
   color: var(--ma-text);
@@ -320,7 +320,7 @@ a {
 .product-card .card-img-top {
   aspect-ratio: 1 / 1;
   object-fit: cover;
-  background: #eee;
+  background: #ece5d6;
 }
 
 /* ── Page d'accueil ──────────────────────────────────────────────────────── */
@@ -363,6 +363,7 @@ a {
   aspect-ratio: 1 / 1;
   object-fit: cover;
   width: 100%;
+  background: #ece5d6;
   border-radius: var(--bs-border-radius);
   transition: transform 0.4s ease;
 }
@@ -677,7 +678,7 @@ footer.site-footer ul a {
   font-size: 0.95rem;
 }
 .alert-danger  { color: #5e1f1f; background: #f7ecea; border-color: #e6cfcb #e6cfcb #e6cfcb var(--ma-danger); }
-.alert-success { color: var(--ma-brown-dark); background: #e9f0ec; border-color: #cfdcd4 #cfdcd4 #cfdcd4 var(--ma-brown); }
+.alert-success { color: var(--ma-brown-dark); background: #F3E7DC; border-color: #E6D3C2 #E6D3C2 #E6D3C2 var(--ma-brown); }
 .alert-warning { color: #5d4a0c; background: #f8f1da; border-color: #ecdfae #ecdfae #ecdfae var(--ma-gold); }
 
 

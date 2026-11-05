@@ -18,6 +18,7 @@ class Category(UUIDModel):
     slug   = models.SlugField(max_length=120, unique=True, blank=True)
     parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='subcategories')
     image  = models.ImageField(upload_to='categories/', blank=True, null=True)
+    thumbnail = models.ImageField(upload_to='categories/thumbs/', blank=True, null=True, editable=False)
     order  = models.PositiveSmallIntegerField(default=0)
 
     class Meta:

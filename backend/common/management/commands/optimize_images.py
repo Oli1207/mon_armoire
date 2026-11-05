@@ -1,6 +1,7 @@
 from django.apps import apps
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
+from django.db.models import Q
 
 from common.image_signals import IMAGE_FIELDS
 from common.imaging import _open, _webp, make_thumbnail, webp_name
@@ -26,7 +27,7 @@ class Command(BaseCommand):
             todo = model.objects.exclude(**{field: ''}).exclude(**{f'{field}__isnull': True}).exclude(**{f'{field}__iendswith': '.webp'})
             if thumb_field:
                 # fichier déjà en WebP mais miniature absente
-                todo = todo | model.objects.filter(**{f'{field}__iendswith': '.webp'}).filter(**{thumb_field: ''})
+                todo = todo | model.objects.filter(Q(**{thumb_field: ''}) | Q(**{f'{thumb_field}__isnull': True}), **{f'{field}__iendswith': '.webp'})
             for obj in todo.distinct()[:budget]:
                 budget -= 1
                 try:

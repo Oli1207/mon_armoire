@@ -42,10 +42,9 @@ def _compute_stats():
 
     orders_by_status = list(Order.objects.values('status').annotate(count=Count('id')).order_by('status'))
 
-    low_stock = (
-        ProductVariant.objects.filter(stock__lte=2, stock__gt=0)
-        .select_related('product').order_by('stock')[:10]
-    )
+    # Stock commun : toutes les variantes portent le même nombre, on ne compte que la principale
+    stock_lines = ProductVariant.objects.filter(Q(product__shared_stock=False) | Q(is_default=True))
+    low_stock = stock_lines.filter(stock__lte=2, stock__gt=0).select_related('product').order_by('stock')[:10]
 
     # ── Tendance des 14 derniers jours ───────────────────────────────────────
     since = timezone.now() - timedelta(days=13)
@@ -97,9 +96,9 @@ def _compute_stats():
         'orders_by_status':    orders_by_status,
         'customers_count':     User.objects.filter(is_staff=False).count(),
         'products_count':      Product.objects.filter(is_active=True).count(),
-        'out_of_stock_count':  ProductVariant.objects.filter(stock=0).count(),
+        'out_of_stock_count':  stock_lines.filter(stock=0).count(),
         'low_stock': [
-            {'product': v.product.name, 'variant': v.label, 'stock': v.stock} for v in low_stock
+            {'product': v.product.name, 'variant': '' if v.product.shared_stock else v.label, 'stock': v.stock} for v in low_stock
         ],
         'revenue_trend':       revenue_trend,
         'top_products':        list(top_products),

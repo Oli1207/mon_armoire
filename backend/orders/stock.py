@@ -1,6 +1,6 @@
-from django.db.models import F
+from django.db.models import F, Sum
 
-from catalog.models import ProductVariant
+from catalog.models import Product, ProductVariant
 
 
 def _coffret_lines(configuration):
@@ -10,26 +10,48 @@ def _coffret_lines(configuration):
     return lines
 
 
+def _pool(variant):
+    """Réserve de stock de cette variante : celle du produit si le stock est commun, sinon la sienne."""
+    return ('product', variant.product_id) if variant.product.shared_stock else ('variant', variant.pk)
+
+
 def check_cart_stock(cart):
-    """Vérifie que chaque article du panier a un stock suffisant. Retourne un message d'erreur ou None."""
+    """Vérifie que le stock suffit pour tout le panier, y compris plusieurs lignes qui puisent dans la même réserve
+    (deux variantes à stock commun, ou la même variante avec deux gravures). Retourne un message d'erreur ou None."""
+    lines = []
     for item in cart.items.select_related('variant__product', 'coffret_configuration'):
         if item.variant:
-            if item.quantity > item.variant.stock and not item.variant.allow_preorder:
-                return f"Stock insuffisant pour « {item.variant.product.name} » ({item.variant.stock} disponible(s))."
+            lines.append((item.variant, item.quantity))
         elif item.coffret_configuration:
-            for variant, quantity in _coffret_lines(item.coffret_configuration):
-                if quantity * item.quantity > variant.stock and not variant.allow_preorder:
-                    return f"Stock insuffisant pour « {variant.product.name} » ({variant.stock} disponible(s))."
+            lines += [(variant, quantity * item.quantity) for variant, quantity in _coffret_lines(item.coffret_configuration)]
+    wanted = {}
+    for variant, quantity in lines:
+        wanted[_pool(variant)] = wanted.get(_pool(variant), 0) + quantity
+    for variant, _ in lines:
+        if wanted[_pool(variant)] > variant.stock and not variant.allow_preorder:
+            return f"Stock insuffisant pour « {variant.product.name} » ({variant.stock} disponible(s))."
     return None
 
 
-def _take(variant_id, quantity, allow_preorder):
+def reserved_in_cart(cart, variant, exclude_item=None):
+    """Quantité déjà au panier qui puise dans la même réserve que cette variante."""
+    lines = cart.items.filter(variant__product_id=variant.product_id) if variant.product.shared_stock else cart.items.filter(variant=variant)
+    if exclude_item is not None:
+        lines = lines.exclude(pk=exclude_item.pk)
+    return lines.aggregate(total=Sum('quantity'))['total'] or 0
+
+
+def _take(variant, quantity):
     """Décrémente de façon atomique ; retourne False si le stock est insuffisant (rien n'est décrémenté)."""
-    updated = ProductVariant.objects.filter(pk=variant_id, stock__gte=quantity).update(stock=F('stock') - quantity)
-    if updated:
+    rows = ProductVariant.objects.filter(pk=variant.pk)
+    if variant.product.shared_stock:
+        # Toutes les lignes du produit bougent ensemble : le verrou du produit évite qu'elles se bloquent entre deux ventes
+        list(Product.objects.select_for_update().filter(pk=variant.product_id).values_list('pk'))
+        rows = ProductVariant.objects.filter(product_id=variant.product_id)
+    if rows.filter(stock__gte=quantity).update(stock=F('stock') - quantity):
         return True
-    if allow_preorder:
-        ProductVariant.objects.filter(pk=variant_id).update(stock=0)
+    if variant.allow_preorder:
+        rows.update(stock=0)
         return True
     return False
 
@@ -45,7 +67,8 @@ def low_stock_variants(order):
             ids.add(item.variant_id)
         elif item.coffret_configuration_id:
             ids.update(variant.pk for variant, _ in _coffret_lines(item.coffret_configuration))
-    return ProductVariant.objects.filter(pk__in=ids, stock__lte=LOW_STOCK).select_related('product')
+    low = ProductVariant.objects.filter(pk__in=ids, stock__lte=LOW_STOCK).select_related('product')
+    return list({_pool(variant): variant for variant in low}.values())  # stock commun : une seule alerte par produit
 
 
 def decrement_stock_for_order(order):
@@ -57,10 +80,10 @@ def decrement_stock_for_order(order):
     shortages = []
     for item in order.items.select_related('variant__product', 'coffret_configuration'):
         if item.variant_id:
-            if not _take(item.variant_id, item.quantity, item.variant.allow_preorder):
+            if not _take(item.variant, item.quantity):
                 shortages.append(item.variant.product.name)
         elif item.coffret_configuration_id:
             for variant, quantity in _coffret_lines(item.coffret_configuration):
-                if not _take(variant.pk, quantity * item.quantity, variant.allow_preorder):
+                if not _take(variant, quantity * item.quantity):
                     shortages.append(variant.product.name)
     return shortages

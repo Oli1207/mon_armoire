@@ -22,7 +22,7 @@ from common.throttles import LookupThrottle
 from .emails import send_order_confirmation_email, send_order_status_email
 from .loyalty import get_balance
 from .services import cancel_unpaid_order, mark_order_paid
-from .stock import check_cart_stock
+from .stock import check_cart_stock, reserved_in_cart
 
 MAX_LINE_QUANTITY = 20
 
@@ -119,7 +119,7 @@ def cart_add(request):
                 {'error': f'Maximum {MAX_LINE_QUANTITY} exemplaires par article.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if future_quantity > variant.stock and not variant.allow_preorder:
+        if future_quantity + reserved_in_cart(cart, variant, exclude_item=existing) > variant.stock and not variant.allow_preorder:
             return Response(
                 {'error': f"Stock insuffisant pour « {variant.product.name} » ({variant.stock} disponible(s))."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -167,7 +167,7 @@ def cart_item_update(request, item_id):
             return Response(
                 {'error': f'Maximum {MAX_LINE_QUANTITY} exemplaires par article.'}, status=status.HTTP_400_BAD_REQUEST,
             )
-        if item.variant and quantity > item.variant.stock and not item.variant.allow_preorder:
+        if item.variant and quantity + reserved_in_cart(item.cart, item.variant, exclude_item=item) > item.variant.stock and not item.variant.allow_preorder:
             return Response(
                 {'error': f'Stock insuffisant ({item.variant.stock} disponible(s)).'}, status=status.HTTP_400_BAD_REQUEST,
             )

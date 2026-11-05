@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 from rest_framework import serializers
 
 from common.uploads import ValidatedImagesMixin
@@ -72,13 +73,20 @@ class ProductVariantAdminSerializer(EngravingZoneMixin, ValidatedImagesMixin, se
             variant.is_default = True
 
     def create(self, validated_data):
+        product = validated_data.get('product')
+        sibling = product.variants.first() if product and product.shared_stock else None
+        if sibling:
+            validated_data['stock'] = sibling.stock  # stock commun : la nouvelle variante rejoint la réserve du produit
         variant = super().create(validated_data)
         self._single_default(variant)
         variant.product.refresh_personalization()
         return variant
 
     def update(self, instance, validated_data):
-        variant = super().update(instance, validated_data)
+        with transaction.atomic():
+            variant = super().update(instance, validated_data)
+            if 'stock' in validated_data and variant.product.shared_stock:
+                variant.product.variants.exclude(pk=variant.pk).update(stock=variant.stock)
         self._single_default(variant)
         variant.product.refresh_personalization()
         return variant
@@ -99,9 +107,18 @@ class ProductAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Product
         fields = ('id', 'name', 'slug', 'description', 'symbolic_meaning', 'category', 'category_name',
-                  'collections', 'is_active', 'is_new', 'is_personalizable', 'engraving_max_chars', 'created_at', 'variants', 'images')
+                  'collections', 'is_active', 'is_new', 'is_personalizable', 'engraving_max_chars', 'shared_stock', 'created_at', 'variants', 'images')
         read_only_fields = ('is_personalizable',)  # découle de la gravure de chaque variante
         extra_kwargs = {'slug': {'required': False}}
+
+    def update(self, instance, validated_data):
+        joined = validated_data.get('shared_stock') and not instance.shared_stock
+        with transaction.atomic():
+            product = super().update(instance, validated_data)
+            main = product.default_variant
+            if joined and main:  # passage au stock commun : le nombre de la variante principale devient celui de toutes
+                product.variants.exclude(pk=main.pk).update(stock=main.stock)
+        return product
 
 
 class SymbolGuideAdminSerializer(ValidatedImagesMixin, serializers.ModelSerializer):

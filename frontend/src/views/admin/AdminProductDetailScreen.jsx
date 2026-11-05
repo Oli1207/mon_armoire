@@ -13,7 +13,7 @@ const ENGRAVING_OPTIONS = [[0, 'Sans gravure'], [1, 'Gravure sur une face (recto
 const NAME_HELP = 'Ce que la cliente voit sur le site. Ex : Simple, Gravure recto, Gravure recto-verso.';
 
 /** Prix, stock et détails d'une variante : les mêmes cases pour la fiche et pour les autres variantes. */
-function VersionFields({ variant, onSave, showName }) {
+function VersionFields({ variant, onSave, showName, stockLabel = 'En stock', hideStock = false }) {
   // Les champs enregistrent automatiquement quand on quitte la case, seulement si la valeur a changé
   const blurSave = (field, original) => (e) => {
     const value = e.target.value;
@@ -26,9 +26,14 @@ function VersionFields({ variant, onSave, showName }) {
           <input className="form-control" defaultValue={variant.option} onBlur={blurSave('option', variant.option)} />
         </Field>
       )}
-      <div className="admin-grid cols-3">
+      <div className={`admin-grid ${hideStock ? 'cols-2' : 'cols-3'}`}>
         <Field label="Prix (FCFA)"><input type="number" min="0" step="100" inputMode="numeric" className="form-control" defaultValue={variant.price} onBlur={blurSave('price', variant.price)} /></Field>
-        <Field label="En stock"><input type="number" min="0" inputMode="numeric" className="form-control" defaultValue={variant.stock} onBlur={blurSave('stock', variant.stock)} /></Field>
+        {!hideStock && (
+          <Field label={stockLabel}>
+            {/* `key` : la case repart du nombre enregistré quand il change ailleurs (passage au stock commun) */}
+            <input key={variant.stock} type="number" min="0" inputMode="numeric" className="form-control" defaultValue={variant.stock} onBlur={blurSave('stock', variant.stock)} />
+          </Field>
+        )}
         <Field label="Ancien prix barré (facultatif)" help="Affiche une réduction.">
           <input type="number" min="0" step="100" inputMode="numeric" className="form-control" defaultValue={variant.old_price ?? ''} onBlur={blurSave('old_price', variant.old_price)} />
         </Field>
@@ -75,14 +80,14 @@ function VersionPhoto({ variant, onPhoto, personalizable, onEngrave }) {
   );
 }
 
-function VariantCard({ variant, onSave, onRemove, onPhoto, personalizable, onEngrave }) {
+function VariantCard({ variant, onSave, onRemove, onPhoto, personalizable, onEngrave, sharedStock }) {
   return (
     <div className="variant-card">
       <div className="variant-head">
         <strong>{variant.label}</strong>
         <button type="button" className="admin-link is-danger" onClick={() => onRemove(variant)}>Supprimer cette variante</button>
       </div>
-      <VersionFields variant={variant} onSave={onSave} showName />
+      <VersionFields variant={variant} onSave={onSave} showName hideStock={sharedStock} />
       <VersionPhoto variant={variant} onPhoto={onPhoto} personalizable={personalizable} onEngrave={onEngrave} />
       <button type="button" className="btn btn-outline-secondary btn-sm mt-3" onClick={() => onSave(variant.id, 'is_default', true)}>
         Afficher cette variante en premier
@@ -238,7 +243,9 @@ export default function AdminProductDetailScreen() {
       )}
       <div className="admin-grid cols-2">
         <Field label="Prix (FCFA) *" error={variantErrors.price}><input type="number" min="0" step="100" inputMode="numeric" className="form-control" value={newVariant.price} onChange={(e) => setNewVariant({ ...newVariant, price: e.target.value })} /></Field>
-        <Field label="En stock"><input type="number" min="0" inputMode="numeric" className="form-control" value={newVariant.stock} onChange={(e) => setNewVariant({ ...newVariant, stock: e.target.value })} /></Field>
+        {(!mainVersion || !product.shared_stock) && (
+          <Field label="En stock"><input type="number" min="0" inputMode="numeric" className="form-control" value={newVariant.stock} onChange={(e) => setNewVariant({ ...newVariant, stock: e.target.value })} /></Field>
+        )}
       </div>
       <Field label="Gravure comprise dans ce prix">
         <select className="form-select" value={newVariant.engraving_sides} onChange={(e) => setNewVariant({ ...newVariant, engraving_sides: Number(e.target.value) })}>
@@ -333,7 +340,10 @@ export default function AdminProductDetailScreen() {
         <h2 className="admin-card-title">Prix et stock</h2>
         {mainVersion ? (
           <>
-            <VersionFields variant={mainVersion} onSave={saveVariant} showName={otherVersions.length > 0} />
+            <VersionFields
+              variant={mainVersion} onSave={saveVariant} showName={otherVersions.length > 0}
+              stockLabel={otherVersions.length > 0 && product.shared_stock ? 'En stock (commun à toutes les variantes)' : 'En stock'}
+            />
             {mainVersion.image && <VersionPhoto variant={mainVersion} onPhoto={uploadVariantPhoto} personalizable={product.is_personalizable} onEngrave={onEngraveVersion} />}
           </>
         ) : (
@@ -388,9 +398,19 @@ export default function AdminProductDetailScreen() {
           {otherVersions.map((v) => (
             <VariantCard
               key={`${v.id}-${epoch}`} variant={v} onSave={saveVariant} onRemove={removeVariant} onPhoto={uploadVariantPhoto}
-              personalizable={product.is_personalizable} onEngrave={onEngraveVersion}
+              personalizable={product.is_personalizable} onEngrave={onEngraveVersion} sharedStock={product.shared_stock}
             />
           ))}
+          {(otherVersions.length > 0 || showAddVersion) && (
+            <div className="form-check mb-3">
+              <input
+                id="p-shared-stock" type="checkbox" className="form-check-input" checked={product.shared_stock}
+                onChange={(e) => saveField('shared_stock', e.target.checked, e.target.checked ? 'Stock commun à toutes les variantes.' : 'Chaque variante a maintenant son propre stock.')}
+              />
+              <label className="form-check-label" htmlFor="p-shared-stock">Stock commun à toutes les variantes</label>
+              <p className="admin-help mb-0">C’est le même objet : une vente enlève une pièce pour toutes les variantes. Décochez seulement si elles sont vraiment différentes, par exemple deux couleurs.</p>
+            </div>
+          )}
           {showAddVersion ? versionForm : (
             <button type="button" className="btn btn-outline-primary" onClick={() => setShowAddVersion(true)}>+ Ajouter une autre variante</button>
           )}

@@ -39,7 +39,7 @@ def mark_order_paid(order, note='Paiement confirmé.', notify=True):
             f'{locked.order_number} — {int(locked.total):,} FCFA'.replace(',', ' ') + (' · avec gravure à faire' if engraved else ''), '/admin/commandes',
         )
         for variant in low_stock_variants(locked):
-            name = f'{variant.product.name} ({variant.label})'
+            name = variant.product.name if variant.product.shared_stock else f'{variant.product.name} ({variant.label})'
             if variant.stock == 0:
                 queue_staff_alert('out_of_stock', 'catalog', 'Bijou en rupture de stock', f'{name} : plus aucun en stock.', f'/admin/produits/{variant.product_id}')
             else:

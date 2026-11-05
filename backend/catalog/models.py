@@ -67,6 +67,7 @@ class Product(UUIDModel):
     is_new           = models.BooleanField(default=False)
     is_personalizable = models.BooleanField(default=False, help_text="Permet au client d'ajouter un texte de gravure/personnalisation")
     engraving_max_chars = models.PositiveSmallIntegerField(default=30, validators=[MinValueValidator(1), MaxValueValidator(60)], help_text="Nombre maximum de caractères de la gravure")
+    shared_stock     = models.BooleanField(default=True, help_text="Stock commun à toutes les variantes (même objet physique, seule la gravure ou le prix change). Toutes les variantes portent alors le même nombre.")
     created_at       = models.DateTimeField(auto_now_add=True)
 
     class Meta:

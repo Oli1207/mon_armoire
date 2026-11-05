@@ -128,7 +128,7 @@ export default function AdminProductsScreen() {
               {products.map((p) => {
                 const image = p.images.find((i) => i.is_main) || p.images[0];
                 const prices = p.variants.map((v) => Number(v.price));
-                const stock = p.variants.reduce((sum, v) => sum + v.stock, 0);
+                const stock = p.shared_stock ? (p.variants[0]?.stock ?? 0) : p.variants.reduce((sum, v) => sum + v.stock, 0);
                 return (
                   <tr key={p.id}>
                     <td className="cell-photo">{image ? <img className="admin-thumb" src={image.thumbnail || image.image} alt="" loading="lazy" /> : <span className="admin-thumb admin-thumb-empty" />}</td>

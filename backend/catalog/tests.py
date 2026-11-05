@@ -518,3 +518,88 @@ class ProductVersionsTests(APITestCase):
         self.client.force_authenticate(self.admin)
         self.client.delete(f"/api/admin/variants/{simple['id']}/")
         self.assertEqual(ProductVariant.objects.filter(product=product, is_default=True).count(), 1)
+
+
+class SharedStockTests(APITestCase):
+    """Le même chapelet vendu simple, gravé recto ou recto-verso : une seule réserve."""
+
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.admin = User.objects.create_user(username='a', email='a@test.ci', password='Test-pass-123', is_staff=True, is_superuser=True)
+        self.client.force_authenticate(self.admin)
+        product = self.client.post('/api/admin/products/', {'name': 'Chapelet', 'price': '4500', 'stock': 5, 'option': 'Simple'}, format='json').data
+        self.product = Product.objects.get(pk=product['id'])
+        self.simple = ProductVariant.objects.get(pk=product['variants'][0]['id'])
+        url = f'/api/admin/products/{self.product.id}/variants/'
+        self.recto = ProductVariant.objects.get(pk=self.client.post(url, {'option': 'Gravure recto', 'price': '10000', 'stock': 99, 'engraving_sides': 1}, format='json').data['id'])
+        self.client.force_authenticate(None)
+
+    def stocks(self):
+        return sorted(self.product.variants.values_list('stock', flat=True))
+
+    def order_with(self, *lines):
+        from orders.models import Order, OrderItem
+        from orders.services import mark_order_paid
+        order = Order.objects.create(user=self.admin, total=Decimal('1000'), status='pending')
+        for variant, quantity in lines:
+            OrderItem.objects.create(order=order, variant=variant, product_name='x', quantity=quantity, unit_price=variant.price)
+        mark_order_paid(order)
+        return order
+
+    def test_a_new_variant_joins_the_stock_of_the_product(self):
+        self.assertEqual(self.stocks(), [5, 5])
+
+    def test_changing_the_stock_changes_it_for_every_variant(self):
+        self.client.force_authenticate(self.admin)
+        self.client.patch(f'/api/admin/variants/{self.simple.id}/', {'stock': 8}, format='json')
+        self.assertEqual(self.stocks(), [8, 8])
+
+    def test_a_sale_of_one_variant_lowers_all_of_them(self):
+        self.order_with((self.recto, 2))
+        self.assertEqual(self.stocks(), [3, 3])
+        self.order_with((self.simple, 1), (self.recto, 1))
+        self.assertEqual(self.stocks(), [1, 1])
+
+    def test_a_sale_beyond_the_stock_leaves_it_untouched_and_is_flagged(self):
+        order = self.order_with((self.recto, 6))
+        self.assertEqual(self.stocks(), [5, 5])
+        self.assertTrue(order.status_history.filter(note__icontains='Stock insuffisant').exists())
+
+    def test_the_cart_counts_every_variant_against_the_same_stock(self):
+        cart_id = str(uuid.uuid4())
+        add = lambda variant, quantity, **more: self.client.post('/api/cart/add/', {'cart_id': cart_id, 'variant_id': str(variant.id), 'quantity': quantity, **more}, format='json')
+        self.assertEqual(add(self.simple, 3).status_code, 201)
+        self.assertEqual(add(self.recto, 3, engraving_text='Awa').status_code, 400)
+        response = add(self.recto, 2, engraving_text='Awa')
+        self.assertEqual(response.status_code, 201)
+        item = next(i for i in response.data['items'] if i['variant'] == self.simple.id or str(i['variant']) == str(self.simple.id) or (isinstance(i['variant'], dict) and str(i['variant']['id']) == str(self.simple.id)))
+        over = self.client.patch(f"/api/cart/items/{item['id']}/", {'cart_id': cart_id, 'quantity': 4}, format='json')
+        self.assertEqual(over.status_code, 400)
+
+    def test_the_order_check_counts_every_variant_against_the_same_stock(self):
+        from orders.models import Cart, CartItem
+        from orders.stock import check_cart_stock
+        cart = Cart.objects.create()
+        CartItem.objects.create(cart=cart, variant=self.simple, quantity=3)
+        CartItem.objects.create(cart=cart, variant=self.recto, quantity=3, engraving_text='Awa')
+        self.assertIn('Stock insuffisant', check_cart_stock(cart))
+        cart.items.filter(variant=self.recto).update(quantity=2)
+        self.assertIsNone(check_cart_stock(cart))
+
+    def test_separate_stocks_stay_independent_and_can_be_shared_again(self):
+        self.client.force_authenticate(self.admin)
+        self.client.patch(f'/api/admin/products/{self.product.id}/', {'shared_stock': False}, format='json')
+        self.client.patch(f'/api/admin/variants/{self.recto.id}/', {'stock': 2}, format='json')
+        self.assertEqual(self.stocks(), [2, 5])
+        self.client.force_authenticate(None)
+        self.order_with((self.recto, 1))
+        self.assertEqual(self.stocks(), [1, 5])
+        self.client.force_authenticate(self.admin)
+        self.client.patch(f'/api/admin/products/{self.product.id}/', {'shared_stock': True}, format='json')
+        self.assertEqual(self.stocks(), [5, 5])
+
+    def test_low_stock_raises_one_alert_for_the_product(self):
+        from notifications.models import Alert
+        self.order_with((self.recto, 5))
+        self.assertEqual(Alert.objects.filter(kind='out_of_stock').count(), 1)

@@ -104,7 +104,7 @@ export default function AdminDashboardScreen() {
             {stats.low_stock.length > 0 && <p className="admin-label mt-3">Stock faible</p>}
             {stats.low_stock.map((item) => (
               <div className="admin-row-line" key={`${item.product}-${item.variant}`}>
-                <span>{item.product} <span className="cell-muted">— {item.variant}</span></span>
+                <span>{item.product}{item.variant && <span className="cell-muted"> — {item.variant}</span>}</span>
                 <strong className="text-danger">{item.stock}</strong>
               </div>
             ))}

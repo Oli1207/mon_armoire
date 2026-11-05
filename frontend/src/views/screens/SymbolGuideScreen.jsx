@@ -27,6 +27,8 @@ export default function SymbolGuideScreen() {
       <div className="container py-5">
         {loading ? (
           <p className="text-center text-muted">Chargement...</p>
+        ) : symbols.length === 0 ? (
+          <p className="text-center text-muted mb-0">Le guide arrive bientôt.</p>
         ) : (
           <div className="row g-5">
             {symbols.map((s, i) => (

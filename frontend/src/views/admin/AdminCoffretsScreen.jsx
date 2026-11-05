@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { adminAPI } from '../../utils/api';
 import ListStatus from '../../components/ListStatus';
 import { useAdminUi } from './ui/AdminUi';
-import { Field, PageHeader, errorText, fcfa, fieldErrors } from './ui/parts';
+import { Field, PageHeader, errorText, fcfa, fieldErrors, useRevealOnOpen } from './ui/parts';
 
 export default function AdminCoffretsScreen() {
   const { notify, confirm } = useAdminUi();
@@ -11,6 +11,7 @@ export default function AdminCoffretsScreen() {
   const [coffrets, setCoffrets] = useState([]);
   const [status, setStatus] = useState({ loading: true, error: '' });
   const [showNew, setShowNew] = useState(false);
+  const newForm = useRevealOnOpen(showNew);
   const [form, setForm] = useState({ name: '', description: '', box_price: '' });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
@@ -68,12 +69,12 @@ export default function AdminCoffretsScreen() {
 
   return (
     <div>
-      <PageHeader title="Coffrets" lead="Les coffrets cadeaux : un contenant, des articles déjà inclus et, si vous le souhaitez, des choix laissés à la cliente.">
-        <button type="button" className="btn btn-primary" onClick={() => setShowNew((v) => !v)}>{showNew ? 'Annuler' : '+ Nouveau coffret'}</button>
+      <PageHeader floating title="Coffrets" lead="Les coffrets cadeaux : un contenant, des articles déjà inclus et, si vous le souhaitez, des choix laissés à la cliente.">
+        {!showNew && <button type="button" className="btn btn-primary" onClick={() => setShowNew(true)}>+ Nouveau coffret</button>}
       </PageHeader>
 
       {showNew && (
-        <form className="admin-card" onSubmit={create} noValidate>
+        <form ref={newForm} className="admin-card" onSubmit={create} noValidate>
           <h2 className="admin-card-title">Nouveau coffret</h2>
           <div className="admin-grid cols-2">
             <Field label="Nom du coffret *" error={errors.name} htmlFor="c-name">
@@ -86,7 +87,10 @@ export default function AdminCoffretsScreen() {
           <Field label="Description" htmlFor="c-desc">
             <textarea id="c-desc" rows={3} className="form-control" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </Field>
-          <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Création…' : 'Créer et composer'}</button>
+          <div className="d-flex gap-2 flex-wrap mt-2">
+            <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Création…' : 'Créer et composer'}</button>
+            <button type="button" className="btn btn-outline-secondary" onClick={() => setShowNew(false)} disabled={saving}>Annuler</button>
+          </div>
         </form>
       )}
 
@@ -101,7 +105,7 @@ export default function AdminCoffretsScreen() {
             <tbody>
               {coffrets.map((c) => (
                 <tr key={c.id}>
-                  <td>{c.image ? <img className="admin-thumb" src={c.image} alt="" loading="lazy" /> : <span className="admin-thumb admin-thumb-empty" />}</td>
+                  <td className="cell-photo">{c.image ? <img className="admin-thumb" src={c.image} alt="" loading="lazy" /> : <span className="admin-thumb admin-thumb-empty" />}</td>
                   <td><Link to={`/admin/coffrets/${c.id}`}><strong>{c.name}</strong></Link></td>
                   <td>{fcfa(c.starting_price)}</td>
                   <td>{c.included_items.length}</td>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import ListStatus from '../../../components/ListStatus';
 import { useAdminUi } from './AdminUi';
-import { Field, ImageField, PageHeader, errorText, fieldErrors } from './parts';
+import { Field, ImageField, PageHeader, errorText, fieldErrors, useRevealOnOpen } from './parts';
 
 /**
  * Écran de gestion générique (liste + formulaire d'ajout/modification + suppression) :
@@ -43,6 +43,8 @@ export default function AdminCrud({
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => { loadOptions?.().then(setOptions).catch(() => {}); }, [loadOptions]);
+
+  const formRef = useRevealOnOpen(editing);
 
   const openNew = () => { setEditing('new'); setForm(emptyForm); setFiles({}); setErrors({}); };
 
@@ -194,12 +196,12 @@ export default function AdminCrud({
 
   return (
     <div>
-      <PageHeader kicker={kicker} title={title} lead={lead}>
+      <PageHeader kicker={kicker} title={title} lead={lead} floating>
         {!editing && <button type="button" className="btn btn-primary" onClick={openNew}>+ {newLabel}</button>}
       </PageHeader>
 
       {editing && (
-        <form className="admin-card" onSubmit={submit} noValidate>
+        <form ref={formRef} className="admin-card" onSubmit={submit} noValidate>
           <h2 className="admin-card-title">{editing === 'new' ? newLabel : 'Modifier'}</h2>
           <div className="admin-grid cols-2">{half.map(renderField)}</div>
           {others.map(renderField)}
@@ -226,7 +228,7 @@ export default function AdminCrud({
               {items.map((item) => (
                 <tr key={item.id}>
                   {thumb && (
-                    <td>{thumb(item) ? <img className="admin-thumb" src={thumb(item)} alt="" loading="lazy" /> : <span className="admin-thumb admin-thumb-empty" />}</td>
+                    <td className="cell-photo">{thumb(item) ? <img className="admin-thumb" src={thumb(item)} alt="" loading="lazy" /> : <span className="admin-thumb admin-thumb-empty" />}</td>
                   )}
                   {columns.map((c) => <td key={c.label}>{c.render(item)}</td>)}
                   <td className="cell-actions">

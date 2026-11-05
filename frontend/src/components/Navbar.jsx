@@ -59,7 +59,7 @@ export default function Navbar() {
   };
 
   return (
-    <header>
+    <header className="site-header">
       {site.announcement && <div className="topbar text-center py-2 text-uppercase">{site.announcement}</div>}
 
       <nav className="navbar-main py-3">

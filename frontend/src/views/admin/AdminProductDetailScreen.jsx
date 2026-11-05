@@ -184,7 +184,13 @@ export default function AdminProductDetailScreen() {
         <Link to={`/produits/${product.slug}`} target="_blank" rel="noopener noreferrer" className="btn btn-outline-secondary">Voir sur le site</Link>
       </PageHeader>
 
-      <section className="admin-card" key={`info-${epoch}`}>
+      <div className="admin-jump" role="group" aria-label="Aller à une partie de la fiche">
+        {[['infos', 'Infos'], ['photos', 'Photos'], ['variantes', 'Variantes']].map(([id, label]) => (
+          <button key={id} type="button" onClick={() => document.getElementById(id)?.scrollIntoView({ block: 'start' })}>{label}</button>
+        ))}
+      </div>
+
+      <section id="infos" className="admin-card" key={`info-${epoch}`}>
         <h2 className="admin-card-title">Informations</h2>
         <div className="admin-grid cols-2">
           <Field label="Nom" htmlFor="p-name"><input id="p-name" className="form-control" defaultValue={product.name} onBlur={blur('name')} /></Field>
@@ -247,7 +253,7 @@ export default function AdminProductDetailScreen() {
         )}
       </section>
 
-      <section className="admin-card">
+      <section id="photos" className="admin-card">
         <h2 className="admin-card-title">Photos</h2>
         {product.images.length === 0 && <p className="admin-help mb-3">Aucune photo pour le moment : ajoutez-en au moins une, la première devient la photo principale.</p>}
         <div className="admin-image-grid">
@@ -268,7 +274,7 @@ export default function AdminProductDetailScreen() {
           ))}
         </div>
         <label className="file-drop mb-0" style={{ position: 'relative' }}>
-          {uploading || '+ Ajouter des photos (JPEG, PNG ou WebP — plusieurs à la fois possible)'}
+          {uploading || '+ Ajouter des photos (plusieurs à la fois possible)'}
           <input type="file" accept={IMAGE_ACCEPT} multiple onChange={uploadPhotos} disabled={Boolean(uploading)} />
         </label>
         <p className="admin-card-note">Toutes les photos sont acceptées : le site les réduit automatiquement pour rester rapide.</p>
@@ -282,7 +288,7 @@ export default function AdminProductDetailScreen() {
         />
       )}
 
-      <section className="admin-card">
+      <section id="variantes" className="admin-card">
         <h2 className="admin-card-title">Variantes (couleurs, tailles, prix, stock)</h2>
         {product.variants.length === 0 && <p className="admin-help mb-3">Ajoutez au moins une variante : sans variante, le produit ne peut pas être acheté.</p>}
         {product.variants.map((v) => (

@@ -10,9 +10,9 @@ const STEPS = [
   },
   {
     id: 'menu',
-    target: '.admin-nav',
+    target: '.admin-nav, .admin-topbar',
     title: () => 'Le menu',
-    body: () => 'Chaque écran de l’Admin est dans ce menu (sur téléphone : le bandeau du haut, que l’on fait glisser vers la gauche). Le bouton « ← Site » vous ramène à la boutique, telle que la voit une cliente.',
+    body: () => 'Chaque écran de l’Admin est dans ce menu (sur téléphone : le bouton « Menu », toujours en haut de l’écran). Le lien « ← Site » du menu vous ramène à la boutique, telle que la voit une cliente.',
   },
   {
     id: 'save',

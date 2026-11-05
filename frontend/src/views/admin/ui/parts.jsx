@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { prepareImage } from '../../../utils/prepareImage';
 
 export const MAX_IMAGE_MB = 25;
@@ -16,7 +16,17 @@ export const shortDate = (value) => new Date(value).toLocaleDateString('fr-FR');
 
 export { errorText, fieldErrors } from '../../../utils/errors';
 
-export function PageHeader({ kicker = 'Administration', title, lead, children }) {
+/** Amène à l'écran un formulaire qui vient de s'ouvrir (sur téléphone, il s'ouvre souvent hors de la vue). */
+export function useRevealOnOpen(open) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (open) ref.current?.scrollIntoView({ block: 'start' });
+  }, [open]);
+  return ref;
+}
+
+/** `floating` : sur téléphone, l'action principale de la page reste toujours visible en bas de l'écran. */
+export function PageHeader({ kicker = 'Administration', title, lead, floating = false, children }) {
   return (
     <header className="admin-header">
       <div>
@@ -24,7 +34,7 @@ export function PageHeader({ kicker = 'Administration', title, lead, children })
         <h1 className="admin-title">{title}</h1>
         {lead && <p className="admin-lead">{lead}</p>}
       </div>
-      {children && <div className="admin-actions">{children}</div>}
+      {children && <div className={`admin-actions${floating ? ' is-floating' : ''}`}>{children}</div>}
     </header>
   );
 }

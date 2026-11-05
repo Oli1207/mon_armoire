@@ -5,7 +5,7 @@ import usePaginated, { useDebounced } from '../../utils/usePaginated';
 import Pager from '../../components/Pager';
 import ListStatus from '../../components/ListStatus';
 import { useAdminUi } from './ui/AdminUi';
-import { Field, PageHeader, StatusBadge, errorText, fcfa, fieldErrors } from './ui/parts';
+import { Field, PageHeader, StatusBadge, errorText, fcfa, fieldErrors, useRevealOnOpen } from './ui/parts';
 
 export default function AdminProductsScreen() {
   const { notify, confirm } = useAdminUi();
@@ -16,6 +16,7 @@ export default function AdminProductsScreen() {
   const [form, setForm] = useState({ name: '', category: '', description: '' });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  const newForm = useRevealOnOpen(showNew);
   const debounced = useDebounced(search.trim());
   const { items: products, count, loading, error, page, pageSize, setPage, reload } = usePaginated(
     adminAPI.products, debounced ? { search: debounced } : {},
@@ -68,12 +69,12 @@ export default function AdminProductsScreen() {
 
   return (
     <div>
-      <PageHeader title="Produits" lead={`${count} produit${count > 1 ? 's' : ''}. Un produit caché n'apparaît plus sur le site mais reste ici.`}>
-        <button type="button" className="btn btn-primary" onClick={() => setShowNew((v) => !v)}>{showNew ? 'Annuler' : '+ Nouveau produit'}</button>
+      <PageHeader title="Produits" lead={`${count} produit${count > 1 ? 's' : ''}. Un produit caché n'apparaît plus sur le site mais reste ici.`} floating>
+        {!showNew && <button type="button" className="btn btn-primary" onClick={() => setShowNew(true)}>+ Nouveau produit</button>}
       </PageHeader>
 
       {showNew && (
-        <form className="admin-card" onSubmit={create} noValidate>
+        <form ref={newForm} className="admin-card" onSubmit={create} noValidate>
           <h2 className="admin-card-title">Nouveau produit</h2>
           <div className="admin-grid cols-2">
             <Field label="Nom du produit *" error={errors.name} htmlFor="new-name">
@@ -89,7 +90,10 @@ export default function AdminProductsScreen() {
           <Field label="Description" htmlFor="new-description">
             <textarea id="new-description" rows={3} className="form-control" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </Field>
-          <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Création…' : 'Créer et continuer'}</button>
+          <div className="d-flex gap-2 flex-wrap mt-2">
+            <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Création…' : 'Créer et continuer'}</button>
+            <button type="button" className="btn btn-outline-secondary" onClick={() => setShowNew(false)} disabled={saving}>Annuler</button>
+          </div>
         </form>
       )}
 
@@ -115,7 +119,7 @@ export default function AdminProductsScreen() {
                 const stock = p.variants.reduce((sum, v) => sum + v.stock, 0);
                 return (
                   <tr key={p.id}>
-                    <td>{image ? <img className="admin-thumb" src={image.thumbnail || image.image} alt="" loading="lazy" /> : <span className="admin-thumb admin-thumb-empty" />}</td>
+                    <td className="cell-photo">{image ? <img className="admin-thumb" src={image.thumbnail || image.image} alt="" loading="lazy" /> : <span className="admin-thumb admin-thumb-empty" />}</td>
                     <td>
                       <Link to={`/admin/produits/${p.id}`}><strong>{p.name}</strong></Link>
                       <div className="cell-muted">{p.category_name || 'Sans catégorie'} · {p.variants.length} variante{p.variants.length > 1 ? 's' : ''}</div>

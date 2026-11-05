@@ -8,12 +8,6 @@ import ReviewPhotoCarousel from '../../components/ReviewPhotoCarousel';
 import { errorText } from '../../utils/errors';
 import useSiteStore from '../../store/site';
 
-const FALLBACK_TESTIMONIALS = [
-  { id: 'f1', user_name: 'Aminata K.', rating: 5, comment: 'Des bijoux de qualité et un service incroyable ! Je ne les quitte plus.', images: [] },
-  { id: 'f2', user_name: 'Christelle B.', rating: 5, comment: 'Chaque bijou me rappelle ma foi. Merci Mon Armoire !', images: [] },
-  { id: 'f3', user_name: 'Mariam S.', rating: 5, comment: "J'ai offert un coffret à ma sœur et elle a tellement aimé !", images: [] },
-];
-
 const CARD_SHAPES = ['review-card--arch', 'review-card--bubble', '', 'review-card--cut'];
 
 export default function HomeScreen() {
@@ -24,15 +18,13 @@ export default function HomeScreen() {
   const [verse, setVerse] = useState(null);
   const [subState, setSubState] = useState('idle');
   const [subError, setSubError] = useState('');
-  const [testimonials, setTestimonials] = useState(FALLBACK_TESTIMONIALS);
+  const [testimonials, setTestimonials] = useState([]);
 
   useEffect(() => {
     categoriesAPI.list().then(({ data }) => setCategories(data));
     coffretsAPI.list().then(({ data }) => setCoffret(data[0] || null));
     notificationsAPI.verseOfTheDay().then(({ data }) => setVerse(data)).catch(() => {});
-    reviewsAPI.featured().then(({ data }) => {
-      if (data.length > 0) setTestimonials(data);
-    }).catch(() => {});
+    reviewsAPI.featured().then(({ data }) => setTestimonials(data)).catch(() => {});
   }, []);
 
   const handleSubscribe = async () => {
@@ -48,10 +40,7 @@ export default function HomeScreen() {
   };
 
   // Les photos des tuiles viennent de l'API des catégories (`cover_image`) : plus besoin de charger tout le catalogue.
-  const tiles = ['Chaînes', 'Bracelets', 'Chapelets', 'Médailles'].map((name) => {
-    const cat = categories.find((c) => c.name === name);
-    return { name, cat, image: cat?.cover_image };
-  });
+  const tiles = categories.slice(0, 4).map((cat) => ({ name: cat.name, cat, image: cat.cover_image }));
   const storyImage = tiles.find((t) => t.image)?.image;
 
   return (
@@ -107,13 +96,13 @@ export default function HomeScreen() {
       </section>
 
       {/* ── Nos incontournables ──────────────────────────────────────────── */}
-      <section className="py-5">
+      {tiles.length > 0 && <section className="py-5">
         <div className="container">
           <div className="text-center mb-4">
             <p className="text-uppercase text-gold small tracking-wide mb-2">Nos incontournables</p>
             <h2 className="h3">Des essentiels pour tous les jours.</h2>
           </div>
-          <div className="row g-4">
+          <div className="row g-4 justify-content-center">
             {tiles.map((tile) => (
               <div className="col-6 col-md-3" key={tile.name}>
                 <Link to={tile.cat ? `/catalogue?category=${tile.cat.slug}` : '/catalogue'} className="category-tile">
@@ -132,7 +121,7 @@ export default function HomeScreen() {
             <Link to="/catalogue" className="link-tap small text-uppercase tracking-wide text-gold">Voir tous les bijoux →</Link>
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ── Aide au choix ────────────────────────────────────────────────── */}
       <section className="py-5" style={{ backgroundColor: 'var(--ma-cream)' }}>
@@ -216,7 +205,7 @@ export default function HomeScreen() {
       </section>
 
       {/* ── Témoignages ──────────────────────────────────────────────────── */}
-      <section id="avis" className="py-5">
+      {testimonials.length > 0 && <section id="avis" className="py-5">
         <div className="container">
           <div className="text-center mb-4">
             <p className="text-uppercase text-gold small tracking-wide mb-2">Avis clients</p>
@@ -239,7 +228,7 @@ export default function HomeScreen() {
             ))}
           </div>
         </div>
-      </section>
+      </section>}
     </div>
   );
 }

@@ -58,7 +58,7 @@ export default function AdminTour() {
     (async () => {
       if (!step.target) return;
       for (let i = 0; i < 30 && !cancelled; i += 1) {
-        const element = document.querySelector(step.target);
+        const element = [...document.querySelectorAll(step.target)].find((el) => el.getClientRects().length > 0);
         if (element) {
           element.classList.add('tour-highlight');
           element.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });

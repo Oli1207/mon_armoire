@@ -560,3 +560,99 @@ a.admin-link { display: inline-flex; align-items: center; }
 .tour-highlight { outline: 4px solid var(--ma-gold); outline-offset: 4px; position: relative; z-index: 5; animation: tour-pulse 1.4s ease-in-out infinite; }
 @keyframes tour-pulse { 50% { outline-color: rgba(201, 162, 39, 0.35); } }
 @media (prefers-reduced-motion: reduce) { .tour-highlight { animation: none; } }
+
+/* ── Téléphone et tablette : l'Admin occupe tout l'écran ─────────────────────── */
+.admin-topbar, .admin-menu-close, .admin-jump { display: none; }
+.admin-nav-head { display: contents; }
+
+@media (max-width: 991.98px) {
+  body.admin-mode .site-header, body.admin-mode .site-footer, body.admin-mode .install-prompt { display: none; }
+  body.admin-menu-open { overflow: hidden; }
+
+  .admin-shell { padding: 1rem 1rem 7rem; }
+
+  .admin-topbar {
+    position: sticky; top: 0; z-index: 1040;
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: max(0.35rem, env(safe-area-inset-top)) 1rem 0.35rem;
+    background: #fff; border-bottom: 2px solid #333;
+  }
+  .admin-menu-btn, .admin-menu-close {
+    flex: 0 0 auto; min-height: 2.75rem; padding: 0 0.9rem;
+    color: var(--ma-brown); font-weight: 600;
+    background: var(--ma-cream); border: 2px solid #333; border-radius: var(--bs-border-radius-sm);
+  }
+  .admin-topbar-title { min-width: 0; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Le menu : une page entière, tous les écrans visibles d'un coup */
+  .admin-nav {
+    position: fixed; inset: 0; z-index: 1050;
+    display: none; overflow: hidden auto; overscroll-behavior: contain;
+    margin: 0; padding: env(safe-area-inset-top) 0 max(1.5rem, env(safe-area-inset-bottom));
+    border: 0; border-radius: 0;
+  }
+  .admin-nav.is-open { display: block; }
+  .admin-nav-head {
+    position: sticky; top: 0; z-index: 1;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.35rem 1rem; background: #fff; border-bottom: 2px solid #333;
+  }
+  .admin-menu-close { display: block; }
+  .admin-nav-group { display: block; }
+  .admin-nav-title {
+    display: block; margin: 1rem 1rem 0.25rem;
+    font-size: 0.78rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #7a6f5f;
+  }
+  .admin-nav a {
+    min-height: 3rem; padding: 0 1rem;
+    font-size: 1.05rem; letter-spacing: 0; text-transform: none; white-space: normal;
+    border-bottom: 0; border-left: 4px solid transparent;
+  }
+  .admin-nav a.active { border-bottom: 0; border-left-color: var(--ma-gold); }
+  .admin-nav-head .admin-back { padding: 0 0.5rem 0 0; border: 0; }
+
+  /* En-tête de page compact : le titre de l'écran est déjà dans la barre du haut */
+  .admin-kicker { display: none; }
+  .admin-header { gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; }
+  .admin-lead { margin-top: 0.25rem; font-size: 0.92rem; }
+
+  /* L'action principale reste toujours à portée de pouce */
+  .admin-actions.is-floating {
+    position: fixed; right: 0; bottom: 0; left: 0; z-index: 1030;
+    padding: 0.6rem 1rem max(0.6rem, env(safe-area-inset-bottom));
+    background: var(--ma-cream); border-top: 2px solid #333;
+  }
+  .admin-actions.is-floating .btn { width: 100%; min-height: 3rem; }
+  /* … sauf pendant la saisie : elle ne doit pas masquer le champ au-dessus du clavier */
+  .admin-shell:has(:is(input, textarea, select):focus) .admin-actions.is-floating { display: none; }
+  .admin-toast-host { bottom: 5rem; }
+
+  .admin-card, .admin-header + form { scroll-margin-top: 7.5rem; }
+
+  /* Fiche produit : aller droit aux photos ou aux variantes */
+  .admin-jump {
+    position: sticky; top: 3.6rem; z-index: 20;
+    display: flex; gap: 0.5rem;
+    margin: 0 -1rem 1rem; padding: 0.4rem 1rem;
+    background: var(--ma-cream); border-bottom: 1px solid #e5ddd0;
+  }
+  .admin-jump button {
+    flex: 1 1 0; min-width: 0; min-height: 2.75rem;
+    color: var(--ma-brown); font-weight: 600;
+    background: #fff; border: 2px solid #333; border-radius: var(--bs-border-radius-sm);
+  }
+
+  .admin-alerts { gap: 0.5rem; margin-bottom: 1rem; padding: 0.6rem 0.85rem; font-size: 0.92rem; }
+}
+
+/* Téléphone : photo et nom côte à côte en tête de fiche */
+@media (max-width: 767.98px) {
+  .admin-table tbody tr { display: flex; flex-wrap: wrap; }
+  .admin-table td.cell-photo { flex: 0 0 auto; width: auto; padding-right: 0; }
+  .admin-table td.cell-photo::before, .admin-table td.cell-photo + td::before { content: none; }
+  .admin-table td.cell-photo + td {
+    flex: 1 1 0; flex-direction: column; align-items: flex-start; justify-content: center;
+    gap: 0; width: auto; min-width: 0; text-align: left;
+  }
+  .admin-table td.cell-photo + td a { text-align: left; }
+}

@@ -19,7 +19,7 @@ ORDER_STATUS_CHOICES = [
 
 DELIVERY_METHOD_CHOICES = [
     ('shipping', 'Livraison'),
-    ('pickup',   'Retrait en boutique'),
+    ('digital',  'Envoi par e-mail'),  # cartes cadeaux : aucun retrait en boutique, tout le reste est livré
 ]
 
 

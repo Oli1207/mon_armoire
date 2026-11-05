@@ -142,7 +142,7 @@ export default function AdminOrdersScreen() {
                         {Number(o.gift_card_amount) > 0 && <p className="mb-1 mt-2 text-gold">Carte cadeau utilisée : −{fcfa(o.gift_card_amount)}</p>}
                         {Number(o.loyalty_discount_amount) > 0 && <p className="mb-1 text-gold">Points de fidélité : {o.loyalty_points_used} pts (−{fcfa(o.loyalty_discount_amount)})</p>}
                         <p className="mb-1 mt-2 cell-muted">
-                          {o.delivery_method === 'pickup' ? 'Retrait en boutique' : `Livraison${o.delivery_zone ? ` (${o.delivery_zone.name})` : ''} : ${fcfa(o.shipping_cost)}`}
+                          {o.delivery_method === 'digital' ? 'Carte cadeau envoyée par e-mail' : `Livraison${o.delivery_zone ? ` (${o.delivery_zone.name})` : ''} : ${fcfa(o.shipping_cost)}`}
                         </p>
                         {o.address && <p className="mb-0 cell-muted">À livrer à : {o.address.full_name} — {o.address.phone} — {o.address.commune ? `${o.address.commune}, ` : ''}{o.address.quartier ? `${o.address.quartier}, ` : ''}{o.address.city}, {o.address.street}</p>}
                         {o.status_history.some(isAlertNote) && (

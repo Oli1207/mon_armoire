@@ -4,7 +4,7 @@ from django.core import mail
 from rest_framework.test import APITestCase
 
 from catalog.models import Category, Product, ProductVariant
-from orders.models import Cart, CartItem, Order, Payment
+from orders.models import Cart, CartItem, DeliveryZone, Order, Payment
 from userauths.models import User
 
 
@@ -15,11 +15,15 @@ class GuestAccountTests(APITestCase):
         self.variant = ProductVariant.objects.create(product=product, price=Decimal('10000'), stock=5, is_default=True)
         self.cart = Cart.objects.create()
         CartItem.objects.create(cart=self.cart, variant=self.variant, quantity=1)
+        self.delivery = {
+            'delivery_zone_id': str(DeliveryZone.objects.create(name='Abidjan', shipping_cost=Decimal('2000')).id),
+            'city': 'Abidjan', 'commune': 'Cocody', 'quartier': 'Riviera', 'street': 'Rue 1',
+        }
 
     def order_as_guest(self):
         with self.captureOnCommitCallbacks(execute=True):
             return self.client.post('/api/orders/', {
-                'cart_id': str(self.cart.id), 'delivery_method': 'pickup', 'email': 'nouvelle@test.ci',
+                'cart_id': str(self.cart.id), **self.delivery, 'email': 'nouvelle@test.ci',
                 'full_name': 'Nouvelle Cliente', 'phone': '0102030405', 'create_account': True,
             }, format='json')
 
@@ -42,7 +46,7 @@ class GuestAccountTests(APITestCase):
         CartItem.objects.create(cart=other_cart, variant=self.variant, quantity=1)
         with self.captureOnCommitCallbacks(execute=True):
             self.client.post('/api/orders/', {
-                'cart_id': str(other_cart.id), 'delivery_method': 'pickup', 'email': 'autre@test.ci',
+                'cart_id': str(other_cart.id), **self.delivery, 'email': 'autre@test.ci',
                 'full_name': 'Autre', 'phone': '0102030405', 'create_account': True,
             }, format='json')
         self.assertNotEqual(first, self.temporary_password_from_email())

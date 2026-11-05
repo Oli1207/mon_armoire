@@ -57,7 +57,7 @@ def giftcard_purchase(request):
     with transaction.atomic():
         order = Order.objects.create(
             user=user, guest_email='' if user else purchaser_email,
-            delivery_method='pickup', subtotal=amount, shipping_cost=0, total=amount,
+            delivery_method='digital', subtotal=amount, shipping_cost=0, total=amount,
         )
         OrderItem.objects.create(
             order=order, product_name=f"Carte cadeau Mon Armoire — {int(amount)} FCFA",

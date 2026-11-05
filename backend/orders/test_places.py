@@ -53,8 +53,17 @@ class CheckoutPlaceTests(APITestCase):
         self.assertEqual((address.commune, address.quartier), ('Marcory', 'Zone 4'))
         self.assertEqual(response.data['address']['quartier'], 'Zone 4')
 
-    def test_pickup_needs_no_address(self):
-        self.assertEqual(self.order(delivery_method='pickup', delivery_zone_id=None).status_code, 201)
+    def test_shop_pickup_does_not_exist_and_cannot_avoid_shipping_fees(self):
+        response = self.order(delivery_method='pickup', delivery_zone_id=None)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('livrées', response.data['error'])
+        self.assertEqual(Order.objects.count(), 0)
+
+    def test_order_always_has_an_address_a_zone_and_its_fees(self):
+        self.assertEqual(self.order(commune='Marcory', quartier='Zone 4').status_code, 201)
+        order = Order.objects.get()
+        self.assertEqual((order.delivery_method, order.delivery_zone, order.shipping_cost), ('shipping', self.zone, Decimal('2000')))
+        self.assertIsNotNone(order.address)
 
 
 class AddressApiPlaceTests(APITestCase):

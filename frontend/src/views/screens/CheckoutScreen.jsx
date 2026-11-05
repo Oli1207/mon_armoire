@@ -15,7 +15,7 @@ export default function CheckoutScreen() {
   const { cart, fetchCart } = useCartStore();
   const [addresses, setAddresses] = useState([]);
   const [zones, setZones] = useState([]);
-  const [deliveryMethod, setDeliveryMethod] = useState('shipping');
+  const [zonesLoaded, setZonesLoaded] = useState(false);
   const [addressId, setAddressId] = useState('');
   const [zoneId, setZoneId] = useState('');
   const [error, setError] = useState('');
@@ -71,6 +71,7 @@ export default function CheckoutScreen() {
     fetchCart();
     deliveryZonesAPI.list().then(({ data }) => {
       setZones(data);
+      setZonesLoaded(true);
       if (data[0]) setZoneId(data[0].id);
     });
     if (isAuthenticated) {
@@ -110,7 +111,6 @@ export default function CheckoutScreen() {
     try {
       const payload = {
         cart_id: localStorage.getItem(CART_ID_KEY),
-        delivery_method: deliveryMethod,
       };
       if (giftCard) {
         payload.gift_card_code = giftCard.code;
@@ -119,22 +119,18 @@ export default function CheckoutScreen() {
         payload.loyalty_points = maxUsablePoints;
       }
       if (isAuthenticated) {
-        if (deliveryMethod === 'shipping') {
-          payload.address_id = addressId;
-          payload.delivery_zone_id = zoneId;
-        }
+        payload.address_id = addressId;
+        payload.delivery_zone_id = zoneId;
       } else {
         payload.full_name = guest.full_name;
         payload.email = guest.email;
         payload.phone = guest.phone;
         payload.create_account = createAccount;
-        if (deliveryMethod === 'shipping') {
-          payload.city = guest.city;
-          payload.commune = guest.commune;
-          payload.quartier = guest.quartier;
-          payload.street = guest.street;
-          payload.delivery_zone_id = zoneId;
-        }
+        payload.city = guest.city;
+        payload.commune = guest.commune;
+        payload.quartier = guest.quartier;
+        payload.street = guest.street;
+        payload.delivery_zone_id = zoneId;
       }
       const { data: order } = await ordersAPI.create(payload);
       navigate(`/commandes/${order.order_number}`, { state: { order } });
@@ -146,8 +142,8 @@ export default function CheckoutScreen() {
   };
 
   const canSubmit = isAuthenticated
-    ? !(deliveryMethod === 'shipping' && (!addressId || !zoneId))
-    : guest.full_name && guest.email && guest.phone && !(deliveryMethod === 'shipping' && (!placeComplete(guest) || !zoneId));
+    ? addressId && zoneId
+    : guest.full_name && guest.email && guest.phone && placeComplete(guest) && zoneId;
 
   return (
     <div>
@@ -220,25 +216,7 @@ export default function CheckoutScreen() {
               </div>
             )}
 
-            <div className="card p-4 mb-4 shadow-sm">
-              <h6 className="text-uppercase small tracking-wide text-gold mb-3">Mode de récupération</h6>
-              <div className="d-flex gap-2">
-                <button
-                  className={`btn btn-sm ${deliveryMethod === 'shipping' ? 'btn-primary' : 'btn-outline-primary'}`}
-                  onClick={() => setDeliveryMethod('shipping')}
-                >
-                  Livraison
-                </button>
-                <button
-                  className={`btn btn-sm ${deliveryMethod === 'pickup' ? 'btn-primary' : 'btn-outline-primary'}`}
-                  onClick={() => setDeliveryMethod('pickup')}
-                >
-                  Retrait en boutique
-                </button>
-              </div>
-            </div>
-
-            {deliveryMethod === 'shipping' && isAuthenticated && (
+            {isAuthenticated && (
               <div className="card p-4 mb-4 shadow-sm">
                 <h6 className="text-uppercase small tracking-wide text-gold mb-3">Adresse de livraison</h6>
                 {addresses.map((a) => (
@@ -283,17 +261,19 @@ export default function CheckoutScreen() {
               </div>
             )}
 
-            {deliveryMethod === 'shipping' && !isAuthenticated && (
+            {!isAuthenticated && (
               <div className="card p-4 mb-4 shadow-sm">
                 <h6 className="text-uppercase small tracking-wide text-gold mb-3">Adresse de livraison</h6>
                 <AddressFields value={guest} onChange={(patch) => setGuest({ ...guest, ...patch })} />
               </div>
             )}
 
-            {deliveryMethod === 'shipping' && (
-              <div className="card p-4 mb-4 shadow-sm">
-                <h6 className="text-uppercase small tracking-wide text-gold mb-3">Zone de livraison</h6>
-                {zones.map((z) => (
+            <div className="card p-4 mb-4 shadow-sm">
+              <h6 className="text-uppercase small tracking-wide text-gold mb-3">Zone de livraison</h6>
+              {zonesLoaded && zones.length === 0 && (
+                <p className="small text-muted mb-0">La livraison n’est pas encore disponible en ligne. Contactez-nous pour passer votre commande.</p>
+              )}
+              {zones.map((z) => (
                   <div className="form-check" key={z.id}>
                     <input
                       className="form-check-input"
@@ -307,9 +287,8 @@ export default function CheckoutScreen() {
                       {z.name} — {Number(z.shipping_cost).toLocaleString('fr-FR')} FCFA ({z.estimated_days_min}-{z.estimated_days_max} j)
                     </label>
                   </div>
-                ))}
-              </div>
-            )}
+              ))}
+            </div>
 
             <div className="card p-4 mb-4 shadow-sm">
               <h6 className="text-uppercase small tracking-wide text-gold mb-3">Carte cadeau</h6>

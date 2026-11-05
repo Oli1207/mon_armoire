@@ -38,6 +38,7 @@ Avant de décider d'un réglage d'hébergement, regarder comment EthniSpirit l'a
 
 ## Intégrité métier (commandes, stock, argent)
 
+- **Livraison uniquement, pas de retrait en boutique** (décision de l'utilisateur) : le serveur refuse tout autre mode. `digital` est réservé aux cartes cadeaux (envoi par e-mail).
 - Toute transition de statut de commande passe par `orders/services.py` (`mark_order_paid`, `cancel_unpaid_order`) : verrou de ligne + statut revérifié, donc idempotent (webhook + retour client + admin simultanés).
 - Toute lecture-puis-écriture sur un solde (carte cadeau, points, stock) se fait dans `transaction.atomic()` avec `select_for_update()` ou `UPDATE ... WHERE stock >= n`. Les e-mails partent via `transaction.on_commit`.
 - Compte créé à la commande : mot de passe temporaire aléatoire (12 caractères, `get_random_string`) **envoyé en clair par e-mail — choix explicite de l'utilisateur** (ne pas le « corriger »). Les routes publiques (retour de paiement, suivi) ne renvoient jamais adresse/téléphone sans preuve (e-mail).

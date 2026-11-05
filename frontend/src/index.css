@@ -379,9 +379,16 @@ a {
   overflow: hidden;
 }
 .coffret-banner img {
-  height: 100%;
+  display: block;
+  aspect-ratio: 4 / 3;
+  height: auto;
   object-fit: cover;
   width: 100%;
+}
+/* Sur grand écran, la photo remplit sa colonne : c'est le texte qui donne la hauteur de la bannière */
+@media (min-width: 768px) {
+  .coffret-banner-photo { position: relative; min-height: 22rem; }
+  .coffret-banner-photo img { position: absolute; inset: 0; aspect-ratio: auto; height: 100%; }
 }
 
 .verse-banner {

@@ -223,11 +223,11 @@ class OrderError(Exception):
 
 def _build_order(request):
     cart_id          = request.data.get('cart_id')
-    delivery_method  = request.data.get('delivery_method', 'shipping')
     delivery_zone_id = request.data.get('delivery_zone_id')
 
-    if delivery_method not in ('shipping', 'pickup'):
-        raise OrderError('Mode de livraison invalide.')
+    # Tout est livré : pas de retrait en boutique (une valeur envoyée à la main ne doit pas effacer les frais de livraison)
+    if request.data.get('delivery_method', 'shipping') != 'shipping':
+        raise OrderError('Toutes les commandes sont livrées : choisissez une adresse et une zone de livraison.')
 
     try:
         cart = Cart.objects.prefetch_related('items').get(id=cart_id)
@@ -251,13 +251,12 @@ def _build_order(request):
     if user:
         # ── Client connecté : adresse existante requise pour la livraison ────
         address_id = request.data.get('address_id')
-        if delivery_method == 'shipping':
-            if not address_id or not delivery_zone_id:
-                raise OrderError('Adresse et zone de livraison requises.')
-            try:
-                address = Address.objects.get(id=address_id, user=user)
-            except (Address.DoesNotExist, ValueError, ValidationError):
-                raise OrderError('Adresse invalide.')
+        if not address_id or not delivery_zone_id:
+            raise OrderError('Adresse et zone de livraison requises.')
+        try:
+            address = Address.objects.get(id=address_id, user=user)
+        except (Address.DoesNotExist, ValueError, ValidationError):
+            raise OrderError('Adresse invalide.')
     else:
         # ── Client invité : coordonnées saisies au checkout ──────────────────
         guest_email = str(request.data.get('email') or '').strip().lower()
@@ -282,24 +281,22 @@ def _build_order(request):
                 full_name=full_name, phone=phone, password=generated_password,
             )
 
-        if delivery_method == 'shipping':
-            city   = str(request.data.get('city') or '').strip()[:100]
-            street = str(request.data.get('street') or '').strip()[:255]
-            if not city or not street:
-                raise OrderError('Ville et adresse requises pour la livraison.')
-            commune, quartier, place_error = clean_place(city, request.data.get('commune'), request.data.get('quartier'))
-            if place_error:
-                raise OrderError(place_error)
-            address = Address.objects.create(
-                user=user, full_name=full_name, phone=phone, city=city, commune=commune, quartier=quartier, street=street, is_default=bool(user),
-            )
+        city   = str(request.data.get('city') or '').strip()[:100]
+        street = str(request.data.get('street') or '').strip()[:255]
+        if not city or not street:
+            raise OrderError('Ville et adresse requises pour la livraison.')
+        commune, quartier, place_error = clean_place(city, request.data.get('commune'), request.data.get('quartier'))
+        if place_error:
+            raise OrderError(place_error)
+        address = Address.objects.create(
+            user=user, full_name=full_name, phone=phone, city=city, commune=commune, quartier=quartier, street=street, is_default=bool(user),
+        )
 
-    if delivery_method == 'shipping':
-        try:
-            delivery_zone = DeliveryZone.objects.get(id=delivery_zone_id, is_active=True)
-        except (DeliveryZone.DoesNotExist, ValueError, ValidationError):
-            raise OrderError('Zone de livraison invalide.')
-        shipping_cost = delivery_zone.shipping_cost
+    try:
+        delivery_zone = DeliveryZone.objects.get(id=delivery_zone_id, is_active=True)
+    except (DeliveryZone.DoesNotExist, ValueError, ValidationError):
+        raise OrderError('Zone de livraison invalide.')
+    shipping_cost = delivery_zone.shipping_cost
 
     subtotal = cart.total
     total = subtotal + shipping_cost
@@ -340,7 +337,7 @@ def _build_order(request):
 
     order = Order.objects.create(
         user=user, guest_email='' if user else guest_email,
-        delivery_method=delivery_method, address=address, delivery_zone=delivery_zone,
+        delivery_method='shipping', address=address, delivery_zone=delivery_zone,
         subtotal=subtotal, shipping_cost=shipping_cost,
         gift_card=gift_card, gift_card_amount=gift_card_amount,
         loyalty_points_used=loyalty_points_used, loyalty_discount_amount=loyalty_discount_amount,

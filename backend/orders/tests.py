@@ -91,8 +91,9 @@ class OrderCreationTests(Base):
         other = Cart.objects.create()
         CartItem.objects.create(cart=other, variant=self.variant, quantity=1)
         response = self.client.post('/api/orders/', {
-            'cart_id': str(other.id), 'delivery_method': 'pickup', 'email': 'jean@b.com',
+            'cart_id': str(other.id), 'delivery_zone_id': str(self.zone.id), 'email': 'jean@b.com',
             'full_name': 'Jean', 'phone': '0100000000', 'create_account': True,
+            'city': 'Abidjan', 'commune': 'Cocody', 'quartier': 'Riviera', 'street': 'Rue 1',
         }, format='json')
         self.assertEqual(response.status_code, 201, response.content)
 
@@ -214,6 +215,10 @@ class GiftCardPurchaseTests(Base):
 
     def test_rejects_bad_email(self):
         self.assertEqual(self.post(10000, recipient_email='pas-un-email').status_code, 400)
+
+    def test_gift_card_order_is_sent_by_email_not_delivered(self):
+        self.assertEqual(self.post(10000).status_code, 201)
+        self.assertEqual(Order.objects.get().delivery_method, 'digital')
 
     def test_valid_purchase(self):
         response = self.post(10000)

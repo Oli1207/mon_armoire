@@ -41,7 +41,6 @@ export default function HomeScreen() {
 
   // Les photos des tuiles viennent de l'API des catégories (`cover_image`) : plus besoin de charger tout le catalogue.
   const tiles = categories.slice(0, 4).map((cat) => ({ name: cat.name, cat, image: cat.cover_image }));
-  const storyImage = tiles.find((t) => t.image)?.image;
 
   return (
     <div>
@@ -156,11 +155,7 @@ export default function HomeScreen() {
         <div className="container">
           <div className="row align-items-center g-5">
             <div className="col-lg-5">
-              {storyImage ? (
-                <img src={storyImage} alt="" className="story-image shadow-sm" loading="lazy" decoding="async" />
-              ) : (
-                <div className="story-image bg-white" />
-              )}
+              <img src="/images/story.webp" alt="" className="story-image shadow-sm" loading="lazy" decoding="async" />
             </div>
             <div className="col-lg-4">
               <p className="text-uppercase text-gold small tracking-wide mb-2">Mon Armoire</p>
@@ -185,12 +180,8 @@ export default function HomeScreen() {
       <section className="py-5">
         <div className="container">
           <div className="coffret-banner row g-0">
-            <div className="col-md-5">
-              {coffret?.image ? (
-                <img src={coffret.image} alt={coffret.name} />
-              ) : (
-                <div className="bg-white h-100" />
-              )}
+            <div className="col-md-5 coffret-banner-photo">
+              <img src={coffret?.image || '/images/coffret.webp'} alt={coffret?.name || 'Un coffret Mon Armoire'} loading="lazy" decoding="async" />
             </div>
             <div className="col-md-7 p-4 p-md-5 d-flex flex-column justify-content-center">
               <p className="text-uppercase text-gold small tracking-wide mb-2">Coffrets Mon Armoire</p>

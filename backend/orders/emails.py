@@ -30,9 +30,7 @@ def send_order_confirmation_email(order, generated_password=None):
     lines.append(f"Total : {order.total} FCFA")
     lines.append("")
 
-    if order.delivery_method == 'pickup':
-        lines.append("Mode de récupération : retrait en boutique.")
-    elif order.address:
+    if order.address:
         lines.append(f"Livraison à : {order.address.full_name}, {order.address.city}, {order.address.street}")
 
     if generated_password:
